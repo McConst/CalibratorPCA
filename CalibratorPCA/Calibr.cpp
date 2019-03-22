@@ -525,3 +525,8 @@ void Calibr::MainCalibrationPLS()
 	//}
 	std::cout << std::endl << std::endl << "Расчет закончен" << std::endl << LEcoeff.B << std::endl << std::endl;
 }
+
+void Calibr::SaveResults()
+{
+
+}
