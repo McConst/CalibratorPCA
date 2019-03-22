@@ -14,7 +14,7 @@ class Calibr
 {
 	//Свойства класса
 	std::string InitFile;// Полный путь к файлу инициализации
-	std::string SpectraPath;//Путь к файлам спектров;
+	std::string SpectraPath;//Путь к файлам спектров и градуировки;
 	int SpectraCount;//Количество спектров с аттестованными значениями концентрации
 	
 
@@ -37,7 +37,7 @@ public:
 		Matrix <double, Dynamic, Dynamic> P;//нагрузки для расчета матрицы X (NxM - N-кол-во образцов, M-кол-во каналов)
 		VectorXd Q;//Вектор нагрузок для расчета матрицы Y размерностью A главных компонент
 		Matrix <double, Dynamic, Dynamic> W;//Матрица взвешенных нагрузок MxA (M-кол-во каналов, А-кол-во ГК)
-		Matrix <double, Dynamic, Dynamic> E;//Матрица остатков (ошибок) для X размерностью NxM
+		MatrixXd E;//Матрица остатков (ошибок) для X размерностью NxM
 		VectorXd F;//Вектор остатков (ошибок) для Y размерностью N
 		VectorXd B;//Вектор коэффициентов регрессии размерностью A для предсказания Y
 	};
@@ -71,7 +71,7 @@ public:
 
 	void  ScorePredictPLS(const VectorXd &B, const MatrixXd &T, double Ymean, VectorXd &Y);//PLS прогноз через счета и коэффициенты регрессии. Y-результаты прогноза
 	double RMSE(VectorXd const &Y0, VectorXd const &Ycalc);// Расчет параметра градуировки. Минимум RMSE - показатель сходимости
-	void SaveResults();
+	void SaveResultsPLS(const std::string FileName, StructPLS X);
 	void MatrixToClipboard(MatrixXd X);//Копирование int матрицы в буфер обмена
 	void VectorToClipboard(VectorXd X);//Копирование int вектора в буфер обмена
 };

@@ -3,13 +3,14 @@
 #include "Calibr.h"
 #include "Split.h"
 #include "MyFuncs.h"
+#include "FileClass.h"//Класс работы с файлами
 #include "const.h"//перечень констант
 #include <string>
 #include <iostream>
 #include <stdlib.h>//библиотека для преобразования string в double
 #include <fstream>//Библиотека работы с файлами
 #include <vector>
-#include <Eigen/Dense>
+#include <Eigen/Dense>//Библиотека Eigen
 #include <Windows.h>//WinAPI
 #include <omp.h>//Библиотека параллельного программирования OpenMP
 
@@ -546,7 +547,23 @@ void Calibr::SetMaxXtoLE()
 	//std::cout << LE;
 }
 
-void Calibr::SaveResults()
-{
+void Calibr::SaveResultsPLS(const std::string FileName, StructPLS X)
+/*Сохранение результатов вычисления на диск в каталог градуировки
+	Структура данных в файле
+	int N		4 байт		количество спектров
+	int M		4 байт		количество каналов
+	int A		4 байт		число ГК
 
+
+*/
+{
+	std::string FullFileName{ SpectraPath };
+	FullFileName.append(FileName);
+	FileClass ResultPLS;
+	ResultPLS.OpenForSave(FullFileName);//Открываем файл для записи
+	ResultPLS.SaveObject(X.N);
+	ResultPLS.SaveObject(X.M);
+	ResultPLS.SaveObject(X.A);
+	ResultPLS.SaveObject(X.Xmean);
+	ResultPLS.Close();
 }

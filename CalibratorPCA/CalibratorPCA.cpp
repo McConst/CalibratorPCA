@@ -31,6 +31,8 @@ int main(int argc, char* argv[])
 	//Calc.VectorToClipboard(Calc.LE);
 
 	Calc.DecomposePLS(Calc.Spectra, Calc.LE, Calc.LEcoeff);//Калибровка по LE для получения начальних значений LECoeff
+	Calc.SaveResultsPLS("test.dat", Calc.LEcoeff);//Сохраняем информацию о параметрах разложения LE
+
 	Calc.MainCalibrationPLS();
 	
 	//system("Pause");

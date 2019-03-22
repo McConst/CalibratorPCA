@@ -115,6 +115,7 @@
       <EnableParallelCodeGeneration>true</EnableParallelCodeGeneration>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <EnableEnhancedInstructionSet>AdvancedVectorExtensions2</EnableEnhancedInstructionSet>
+      <AdditionalOptions>/Zc:twoPhase- %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -155,6 +156,7 @@
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <OpenMPSupport>true</OpenMPSupport>
       <EnableParallelCodeGeneration>true</EnableParallelCodeGeneration>
+      <AdditionalOptions>/Zc:twoPhase- %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -166,6 +168,7 @@
   <ItemGroup>
     <ClInclude Include="Calibr.h" />
     <ClInclude Include="const.h" />
+    <ClInclude Include="FileClass.h" />
     <ClInclude Include="MyFuncs.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="Split.h" />
@@ -173,6 +176,7 @@
   <ItemGroup>
     <ClCompile Include="Calibr.cpp" />
     <ClCompile Include="CalibratorPCA.cpp" />
+    <ClCompile Include="FileClass.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
