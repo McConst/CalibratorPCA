@@ -384,6 +384,7 @@ void Calibr::MainCalibrationPLS()
 				NormDecomposePLS(LEcoeff.B, LEcoeff.T, LEcoeff.Ymean, Spectra, mY.col(elmnt), XNormcoeff);
 				//По концентрационным счетам предсказываем расчетные концентрации в Сonc0
 				ScorePredictPLS(XNormcoeff.B, XNormcoeff.T, XNormcoeff.Ymean, Conc0);
+				
 				omp_set_nested(1);//Разрешаем вложенный параллелизм
 #pragma omp parallel for ordered private(NewXCoeff, NewConc)
 				for (int i = 0; i < Amax; ++i)
@@ -524,6 +525,25 @@ void Calibr::MainCalibrationPLS()
 		std::cout << "RMSEC= " << F.norm()/std::sqrt(N) << std::endl << std::endl;
 	//}
 	std::cout << std::endl << std::endl << "Расчет закончен" << std::endl << LEcoeff.B << std::endl << std::endl;
+}
+
+
+void Calibr::SetSumXtoLE()
+{
+	LE = Spectra.rowwise().sum();
+	//std::cout << LE;
+}
+
+void Calibr::SetMeanXtoLE()
+{
+	LE = Spectra.rowwise().mean();
+	//std::cout << LE;
+}
+
+void Calibr::SetMaxXtoLE()
+{
+	LE = Spectra.rowwise().maxCoeff();
+	//std::cout << LE;
 }
 
 void Calibr::SaveResults()

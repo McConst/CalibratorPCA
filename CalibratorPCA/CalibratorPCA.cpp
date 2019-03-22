@@ -24,6 +24,7 @@ int main(int argc, char* argv[])
 	Path = Path.substr(0, pos); //Получили каталог, в котором находятся файлы для расчета калибровки
 	Calibr Calc(Path.append(InitFile));//Инициализируем новый объект Calc данными из файла
 	Calc.LoadSpectra();//Читаем спектральные данные и информацию для калибровки++
+	Calc.SetMaxXtoLE();//Устанавливаем LE в 1 как параметр начальной инициализации
 
 	//Методы для копирования матриц в буфер обмена и последующей проверки в Unscrambler или Excel
 	//Calc.MatrixToClipboard(Calc.Spectra);

@@ -55,6 +55,9 @@ public:
 	~Calibr();
 
 	void LoadSpectra(const std::string &SpectraFileName = "Spectra.dat", const std::string &YFileName="Y.txt", const std::string &LEfilename="LE.dat");
+	void SetSumXtoLE();//¬ качестве параметра инициализации устанавливает все значени€ вектора LE сумма в каналах
+	void SetMeanXtoLE();//¬ качестве параметра дл€ инициализации устанавливаетс€ среднее значение в спектре
+	void SetMaxXtoLE();//¬ качестве параметра дл€ инициализации устанавливаетс€ среднее значение в спектре
 
 	/* алибровка по PLS. ¬ходное значение Y0 - нецентрированный вектор концентраций одного элемента
 											A - количество √лавных  омпонент дл€ разложени€
