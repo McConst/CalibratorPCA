@@ -34,7 +34,7 @@ public:
 		RowVectorXd Xmean;//Средний спектр
 		double Ymean;//Средний отклик
 		Matrix <double, Dynamic, Dynamic> T;//матрица счетов размерностью NxA (N-кол-во образцов, A - кол-во ГК)
-		Matrix <double, Dynamic, Dynamic> P;//нагрузки для расчета матрицы X (NxM - N-кол-во образцов, M-кол-во каналов)
+		Matrix <double, Dynamic, Dynamic> P;//нагрузки для расчета матрицы X (MxA - N-кол-во образцов, M-кол-во каналов)
 		VectorXd Q;//Вектор нагрузок для расчета матрицы Y размерностью A главных компонент
 		Matrix <double, Dynamic, Dynamic> W;//Матрица взвешенных нагрузок MxA (M-кол-во каналов, А-кол-во ГК)
 		MatrixXd E;//Матрица остатков (ошибок) для X размерностью NxM
@@ -72,6 +72,7 @@ public:
 	void  ScorePredictPLS(const VectorXd &B, const MatrixXd &T, double Ymean, VectorXd &Y);//PLS прогноз через счета и коэффициенты регрессии. Y-результаты прогноза
 	double RMSE(VectorXd const &Y0, VectorXd const &Ycalc);// Расчет параметра градуировки. Минимум RMSE - показатель сходимости
 	void SaveResultsPLS(const std::string FileName);
+	void LoadResultsPLS(const std::string FileName);
 	void MatrixToClipboard(MatrixXd X);//Копирование int матрицы в буфер обмена
 	void VectorToClipboard(VectorXd X);//Копирование int вектора в буфер обмена
 };

@@ -560,8 +560,30 @@ void Calibr::SaveResultsPLS(const std::string FileName)
 	if (!res)
 	{
 		std::cout << "Не удалось открыть файл для записи параметров градуировки\n";
+		std::system("Pause");
+		exit;
 	}
 	ResultPLS.SaveObject(LEcoeff);
 	ResultPLS.SaveObject(XNormcoeff);
+	ResultPLS.Close();
+}
+
+void Calibr::LoadResultsPLS(std::string FileName)
+//Подгружаем результаты расчетов из файла
+{
+	bool res;
+	std::string FullFileName{ SpectraPath };
+	FullFileName.append(FileName);
+	FileClass ResultPLS;
+	res = ResultPLS.OpenForRead(FullFileName);//Открываем файл для чтения
+	if (!res)
+	{
+		std::cout << "Не удалось открыть файл\n" << FullFileName<<"\nдля чтения данных PLS-градуировки";
+		std::system("Pause");
+		exit;
+	}
+
+	ResultPLS.LoadObject(LEcoeff);
+	ResultPLS.LoadObject(XNormcoeff);
 	ResultPLS.Close();
 }

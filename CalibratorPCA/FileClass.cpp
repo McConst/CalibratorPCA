@@ -54,6 +54,22 @@ bool FileClass::OpenForSave(const string FullFileName)
 	return res;
 }
 
+bool FileClass::OpenForRead(const string FullFileName)
+//Открываем файл для чтения
+{
+	FileName = FullFileName;
+
+	LPWSTR widestrFileName = StringToW_Char(FileName);
+
+	hFile = CreateFile(widestrFileName, GENERIC_READ, 0, 0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
+	delete[] widestrFileName;
+	bool res;
+	res = ((hFile == 0) || (hFile == INVALID_HANDLE_VALUE)) ? false : true;
+
+	return res;
+}
+
+
 bool FileClass::SaveObject(int INT)
 //Переопределенная функция записи в файл значения типа int
 {
@@ -94,7 +110,7 @@ bool FileClass::SaveObject(const MatrixXd &X)
 	return (nBytesSave == DataSize && res);
 }
 
-bool FileClass::SaveObject(Calibr::StructPLS X)
+bool FileClass::SaveObject(const Calibr::StructPLS &X)
 /*Сохранение в файл структуры с параметрами расчета по PLS
 Структура данных в файле
 int N				4 байт		количество спектров
@@ -103,9 +119,9 @@ int A				4 байт		число ГК
 VectorXd Xmean		M * 8 байт	вектор - строка средних значений спектра
 double Ymean		8 байт		средний отклик(концентрация / LE) в спектре
 MatrixXd T			N*A * 8 байт	матрица счетов
-MatrixXd P			N*M * 8 байт	матрица нагрузки
+MatrixXd P			M*A * 8 байт	матрица нагрузки
 VectorXd Q			A * 8 байт	вектор нагрузок для вектора отклика Y
-VectorXd W			M*A * 8 байт	матрица взвешенных нагрузок W
+MatrixXd W			M*A * 8 байт	матрица взвешенных нагрузок W
 MatrixXd E			N*M * 8 байт	матрица ошибок(остатков) от матрицы X
 VectorXd F			N * 8 байт	вектор остатков для Y
 VectorXd B			A * 8 байт	вектор регрессионных коэффициентов B
@@ -124,5 +140,87 @@ VectorXd B			A * 8 байт	вектор регрессионных коэффициентов B
 	res=res && SaveObject(X.E);
 	res=res && SaveObject(X.F);
 	res=res && SaveObject(X.B);
+	return res;
+}
+
+bool FileClass::LoadObject(int &INT)
+//Переопределенная функция записи в файл значения типа int
+{
+	int DataSize = sizeof(INT);//Размер байт запрашиваемый на чтение из файла
+	//int buffer;
+	DWORD nBytesSave;//Размер, полученный чтением из файла
+	bool res = ReadFile(hFile, &INT, DataSize, &nBytesSave, NULL);
+	//INT = buffer;
+	return (nBytesSave == DataSize && res);
+}
+
+bool FileClass::LoadObject(MatrixXd &X, const int N, const int M)
+//Переопределенная функция чтения матрицы из файла значения типа double
+{
+
+	int DataSize = N * M * sizeof(double);//Размер байт запрашиваемый на чтение из файла
+	X.resize(N, M);
+	//Объявляем динамический массив, в котором поколоночно будут храниться значения матрицы
+	double* Arr = new double[N*M];//Создаем массив для чтения целочисленных спектров
+	DWORD nBytesSave;//Размер, полученный чтением из файла
+	bool res = ReadFile(hFile, Arr, DataSize, &nBytesSave, NULL);
+	//Наполняем матрицу данными из массива
+	for (int i = 0; i < M; ++i)
+	{
+		{
+			for (int j = 0; j < N; ++j)
+				X(j, i)=Arr[i*N+j];
+		}
+	}
+		
+	delete[] Arr;
+	return (nBytesSave == DataSize && res);
+}
+
+bool FileClass::LoadObject(double &DOUBLE)
+//Переопределенная функция записи в файл значения типа int
+{
+	int DataSize = sizeof(DOUBLE);//Размер байт запрашиваемый на чтение из файла
+	DWORD nBytesSave;//Размер, полученный чтением из файла
+	bool res = ReadFile(hFile, &DOUBLE, DataSize, &nBytesSave, NULL);
+	return (nBytesSave == DataSize && res);
+}
+
+
+bool  FileClass::LoadObject(Calibr::StructPLS &X)
+/*Загрузка данных PLS калибровки в структуру
+Структура данных в файле
+int N				4 байт		количество спектров
+int M				4 байт		количество каналов
+int A				4 байт		число ГК
+VectorXd Xmean		M * 8 байт	вектор - строка средних значений спектра
+double Ymean		8 байт		средний отклик(концентрация / LE) в спектре
+MatrixXd T			N*A * 8 байт	матрица счетов
+MatrixXd P			M*A * 8 байт	матрица нагрузки
+VectorXd Q			A * 8 байт	вектор нагрузок для вектора отклика Y
+MatrixXd W			M * A * 8 байт	матрица взвешенных нагрузок W
+MatrixXd E			N * M * 8 байт	матрица ошибок(остатков) от матрицы X
+VectorXd F			N * 8 байт	вектор остатков для Y
+VectorXd B			A * 8 байт	вектор регрессионных коэффициентов B
+*/
+{
+	bool res{ true };
+	res = res && LoadObject(X.N);//Читаем значение количества спектров
+	res = res && LoadObject(X.M);//Читаем значение количества каналов
+	res = res && LoadObject(X.A);//Читаем количество главных компонент
+	MatrixXd Temp;//Создаем динамическую матрицу для чтения данных из файла
+	res = res && LoadObject(Temp, 1, X.M);//Читаем вектор 
+	X.Xmean = Temp;
+	res = res && LoadObject(X.Ymean);//Читаем средний сигнал
+	res = res && LoadObject(X.T, X.N, X.A);//Читаем матрицу счетов T
+	res = res && LoadObject(X.P, X.M, X.A);//Читаем матрицу нагрузок P
+	res = res && LoadObject(Temp, X.A, 1);//Читаем вектор химических нагрузок Q во временную матрицу
+	X.Q = Temp;
+	res = res && LoadObject(X.W, X.M, X.A);//Читаем матрицу взвешенных нагрузок W
+	res = res && LoadObject(X.E, X.N, X.M);//Читаем матрицу ошибок E
+	res = res && LoadObject(Temp, X.N,1);//Читаем вектор остатков Y во временную матрицу
+	X.F = Temp;
+	res = res && LoadObject(Temp, X.A, 1);//Читаем вектор коэффициентов B во временную матрицу
+	X.B = Temp;
 	return res;
 }
