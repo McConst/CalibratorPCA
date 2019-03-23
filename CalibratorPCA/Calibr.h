@@ -71,7 +71,7 @@ public:
 
 	void  ScorePredictPLS(const VectorXd &B, const MatrixXd &T, double Ymean, VectorXd &Y);//PLS прогноз через счета и коэффициенты регрессии. Y-результаты прогноза
 	double RMSE(VectorXd const &Y0, VectorXd const &Ycalc);// Расчет параметра градуировки. Минимум RMSE - показатель сходимости
-	void SaveResultsPLS(const std::string FileName, StructPLS X);
+	void SaveResultsPLS(const std::string FileName);
 	void MatrixToClipboard(MatrixXd X);//Копирование int матрицы в буфер обмена
 	void VectorToClipboard(VectorXd X);//Копирование int вектора в буфер обмена
 };

@@ -547,23 +547,21 @@ void Calibr::SetMaxXtoLE()
 	//std::cout << LE;
 }
 
-void Calibr::SaveResultsPLS(const std::string FileName, StructPLS X)
+void Calibr::SaveResultsPLS(const std::string FileName)
 /*Сохранение результатов вычисления на диск в каталог градуировки
-	Структура данных в файле
-	int N		4 байт		количество спектров
-	int M		4 байт		количество каналов
-	int A		4 байт		число ГК
-
-
+	
 */
 {
+	bool res;
 	std::string FullFileName{ SpectraPath };
 	FullFileName.append(FileName);
 	FileClass ResultPLS;
-	ResultPLS.OpenForSave(FullFileName);//Открываем файл для записи
-	ResultPLS.SaveObject(X.N);
-	ResultPLS.SaveObject(X.M);
-	ResultPLS.SaveObject(X.A);
-	ResultPLS.SaveObject(X.Xmean);
+	res=ResultPLS.OpenForSave(FullFileName);//Открываем файл для записи
+	if (!res)
+	{
+		std::cout << "Не удалось открыть файл для записи параметров градуировки\n";
+	}
+	ResultPLS.SaveObject(LEcoeff);
+	ResultPLS.SaveObject(XNormcoeff);
 	ResultPLS.Close();
 }
