@@ -19,13 +19,13 @@ public:
 
 	bool OpenForSave(const string FullFileName);//Открыть файл для записи
 	bool OpenForRead(const string FullFileName);//Открыть файл для чтения
-	bool SaveObject(int INT);//Сохранение в файл объекта типа int
+	bool SaveObject(Index INT);//Сохранение в файл объекта типа int
 	bool SaveObject(double DOUBLE);//Сохранение в файл объекта типа double
 	bool SaveObject(const MatrixXd &X);//Сохранение динамической матрицы double в файл
 	bool SaveObject(const Calibr::StructPLS &X);//Запись структуры StructPLS в открытый файл
 	bool LoadObject(Calibr::StructPLS &X);//Загрузка данных структуры StructPLS из открытого файла
-	bool LoadObject(int &N);//Чтение результата в переменную int, заданную параметром
-	bool LoadObject(MatrixXd &X, const int N, const int M);//Чтение из файла значений матрицы NxM
+	bool LoadObject(Index &N);//Чтение результата в переменную int, заданную параметром
+	bool LoadObject(MatrixXd &X, const Index N, const Index M);//Чтение из файла значений матрицы NxM
 	bool LoadObject(double &DOUBLE);//Читаем значение в переменную типа double
 	
 

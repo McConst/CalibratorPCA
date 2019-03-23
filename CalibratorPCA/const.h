@@ -4,6 +4,12 @@
 #ifndef CONST_H
 #define CONST_H
 
+enum ProcessError
+{
+	FILE_READING_ERROR,		//Ошибка чтения файла
+	FILE_SAVING_ERROR		//Ошибка сохранения файла
+};
+
 const std::string InitFile{ "CalibratorPCA.ini" };//Имя файла настроек
 const int CRM_ElementCount{ 3 };//Количество аттестованных элементов в стандартном образце, для которых строится градуировка, 3
 const int ChannelCount{ 2047 };//Количество спектральных каналов, 2047

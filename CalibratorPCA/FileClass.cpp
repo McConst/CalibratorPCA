@@ -70,7 +70,7 @@ bool FileClass::OpenForRead(const string FullFileName)
 }
 
 
-bool FileClass::SaveObject(int INT)
+bool FileClass::SaveObject(Index INT)
 //Переопределенная функция записи в файл значения типа int
 {
 	int DataSize = sizeof(INT);//Размер байт запрашиваемый на чтение из файла
@@ -91,9 +91,9 @@ bool FileClass::SaveObject(double DOUBLE)
 bool FileClass::SaveObject(const MatrixXd &X)
 //Переопределенная функция записи в файл значения типа int
 {
-	int N = X.rows();
-	int M = X.cols();
-	int DataSize =N * M * sizeof(double);//Размер байт запрашиваемый на чтение из файла
+	Index N = X.rows();
+	Index M = X.cols();
+	DWORD DataSize =N * M * sizeof(double);//Размер байт запрашиваемый на чтение из файла
 	//Объявляем динамический массив, в котором поколоночно будут храниться значения матрицы
 	double* Arr = new double[N*M];//Создаем массив для чтения целочисленных спектров
 	
@@ -143,7 +143,7 @@ VectorXd B			A * 8 байт	вектор регрессионных коэффициентов B
 	return res;
 }
 
-bool FileClass::LoadObject(int &INT)
+bool FileClass::LoadObject(Index &INT)
 //Переопределенная функция записи в файл значения типа int
 {
 	int DataSize = sizeof(INT);//Размер байт запрашиваемый на чтение из файла
@@ -154,11 +154,11 @@ bool FileClass::LoadObject(int &INT)
 	return (nBytesSave == DataSize && res);
 }
 
-bool FileClass::LoadObject(MatrixXd &X, const int N, const int M)
+bool FileClass::LoadObject(MatrixXd &X, const Index N, const Index M)
 //Переопределенная функция чтения матрицы из файла значения типа double
 {
 
-	int DataSize = N * M * sizeof(double);//Размер байт запрашиваемый на чтение из файла
+	DWORD DataSize = N * M * sizeof(double);//Размер байт запрашиваемый на чтение из файла
 	X.resize(N, M);
 	//Объявляем динамический массив, в котором поколоночно будут храниться значения матрицы
 	double* Arr = new double[N*M];//Создаем массив для чтения целочисленных спектров

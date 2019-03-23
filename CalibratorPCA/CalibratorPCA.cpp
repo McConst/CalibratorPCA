@@ -25,7 +25,9 @@ int main(int argc, char* argv[])
 	Calibr Calc(Path.append(InitFile));//Инициализируем новый объект Calc данными из файла
 	Calc.LoadSpectra();//Читаем спектральные данные и информацию для калибровки++
 	Calc.SetMaxXtoLE();
-
+	RowVectorXd Test;
+	Calc.LoadElvaXSpectrum("1K0131701BK#2.evt", Test);
+	std::cout << Test;
 	//Методы для копирования матриц в буфер обмена и последующей проверки в Unscrambler или Excel
 	//Calc.MatrixToClipboard(Calc.Spectra);
 	//Calc.VectorToClipboard(Calc.LE);

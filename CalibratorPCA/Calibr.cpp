@@ -48,6 +48,10 @@ Calibr::Calibr(const std::string &InitFileName)
 			{
 				SpectraPath = CorrectPath(value);
 			}
+			else if (operat == "WorkingPath")
+			{
+				WorkingPath= CorrectPath(value);
+			}
 		}
 	}
 	else
@@ -261,8 +265,8 @@ inline void  Calibr::ScorePredictPLS(const VectorXd &B, const MatrixXd &T, doubl
 
 void Calibr::MatrixToClipboard(MatrixXd X)
 {
-	int Cols = X.cols();
-	int Rows = X.rows();
+	Index Cols = X.cols();
+	Index Rows = X.rows();
 	std::string str;
 	for (int i = 0; i < Rows; ++i)
 
@@ -291,8 +295,8 @@ void Calibr::MatrixToClipboard(MatrixXd X)
 
 void Calibr::VectorToClipboard(VectorXd X)
 {
-	int Cols = X.cols();
-	int Rows = X.rows();
+	Index Cols = X.cols();
+	Index Rows = X.rows();
 	std::string str;
 	for (int i = 0; i < Rows; ++i)
 
@@ -352,7 +356,7 @@ sX - структура с результатами нормализованного разложения
 void Calibr::MainCalibrationPLS()
 //Главный метод для PLS калибровки с нормированием на внутренний стандарт
 {
-	int N = Spectra.rows();//Количество спектров
+	Index N = Spectra.rows();//Количество спектров
 	VectorXd Conc0;//Вектор расчетных концентраций для начального значения
 	MatrixXd Jac(N, Amax);//Якобиан
 	VectorXd NewLE(N);//Вектор новых значений LE
@@ -561,7 +565,7 @@ void Calibr::SaveResultsPLS(const std::string FileName)
 	{
 		std::cout << "Не удалось открыть файл для записи параметров градуировки\n";
 		std::system("Pause");
-		exit;
+		exit(FILE_SAVING_ERROR);
 	}
 	ResultPLS.SaveObject(LEcoeff);
 	ResultPLS.SaveObject(XNormcoeff);
@@ -580,10 +584,31 @@ void Calibr::LoadResultsPLS(std::string FileName)
 	{
 		std::cout << "Не удалось открыть файл\n" << FullFileName<<"\nдля чтения данных PLS-градуировки";
 		std::system("Pause");
-		exit;
+		exit(FILE_READING_ERROR);
 	}
 
 	ResultPLS.LoadObject(LEcoeff);
 	ResultPLS.LoadObject(XNormcoeff);
 	ResultPLS.Close();
+}
+
+void Calibr::LoadElvaXSpectrum(const std::string FileName, RowVectorXd &X)
+//Загрузка интенсивностей из файла
+{
+	std::string FullFileName{ WorkingPath };
+	FullFileName.append(FileName);//Полное имя спектра
+	ifstream spectrum;
+	spectrum.open(FullFileName, ios::binary);
+	spectrum.seekg(0x0100);
+	DWORD ChannelCount;
+	spectrum.read((char*) &ChannelCount, sizeof(DWORD));
+	//Переопределили вектор-строку под размер спектра в файле. Размер спектра уменьшили на 1, так как последний канал не используется
+	X.resize(--ChannelCount);
+	DWORD* Arr = new DWORD[ChannelCount];//Определили массив под чтение спектра
+	spectrum.read((char*)Arr, ChannelCount * sizeof(DWORD));//Считываем интенсивности в каналах
+	spectrum.close();
+	for (DWORD i = 0; i < ChannelCount; ++i)
+		X(i) = Arr[i];
+	delete[] Arr;
+	
 }

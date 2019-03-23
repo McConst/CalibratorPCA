@@ -15,7 +15,10 @@ class Calibr
 	//Свойства класса
 	std::string InitFile;// Полный путь к файлу инициализации
 	std::string SpectraPath;//Путь к файлам спектров и градуировки;
+	std::string WorkingPath;//Путь к каталогу с файлами спектров для анализа
 	int SpectraCount;//Количество спектров с аттестованными значениями концентрации
+
+	MatrixXd AnalyseSpectra;//Матрица спектров для анализа
 	
 
 	//Методы
@@ -28,9 +31,9 @@ public:
 
 	struct StructPLS//Структура, в которой хранятся результаты PLS-разложения
 	{
-		int N;//Количество спектров/образцов
-		int M;//Количество каналов
-		int A;//Количество ГК
+		Index N;//Количество спектров/образцов
+		Index M;//Количество каналов
+		Index A;//Количество ГК
 		RowVectorXd Xmean;//Средний спектр
 		double Ymean;//Средний отклик
 		Matrix <double, Dynamic, Dynamic> T;//матрица счетов размерностью NxA (N-кол-во образцов, A - кол-во ГК)
@@ -71,8 +74,13 @@ public:
 
 	void  ScorePredictPLS(const VectorXd &B, const MatrixXd &T, double Ymean, VectorXd &Y);//PLS прогноз через счета и коэффициенты регрессии. Y-результаты прогноза
 	double RMSE(VectorXd const &Y0, VectorXd const &Ycalc);// Расчет параметра градуировки. Минимум RMSE - показатель сходимости
-	void SaveResultsPLS(const std::string FileName);
-	void LoadResultsPLS(const std::string FileName);
+	
+	
+	void SaveResultsPLS(const std::string FileName);//Сохранение результатов расчет методом PLS
+	void LoadResultsPLS(const std::string FileName);//Чтение параметров PLS из файла в объект класса
+	void LoadElvaXSpectrum(const std::string FileName, RowVectorXd &X);//Загрузка спектральных интенсивностей из файла ElvaX в вектор-строку
+
+
 	void MatrixToClipboard(MatrixXd X);//Копирование int матрицы в буфер обмена
 	void VectorToClipboard(VectorXd X);//Копирование int вектора в буфер обмена
 };
