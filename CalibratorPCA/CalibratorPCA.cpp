@@ -26,8 +26,8 @@ int main(int argc, char* argv[])
 	Path = Path.substr(0, pos); //Получили каталог, в котором находятся файлы для расчета калибровки
 	Calibr Calc(Path.append(InitFile));//Инициализируем новый объект Calc данными из файла
 	Calc.LoadInitDataForCalibrat();//Читаем спектральные данные и аттестованных значения на них
-	Calc.InitLE_SetMaxX();
-	Calc.DecomposePLS(Calc.Spectra, Calc.LE, Calc.LEcoeff);//Калибровка по LE для получения начальних значений LECoeff
+	Calc.InitLE_NonCoherentBackScatter();
+	
 	//Calc.LoadResultsPLS("test.dat");
 
 	Calc.MainCalibrationPLS();

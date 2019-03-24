@@ -15,8 +15,8 @@ class Calibr
 	//Свойства класса
 	std::string InitFile;// Полный путь к файлу инициализации
 	std::string SpectraPath;//Путь к файлам спектров и градуировки;
+	std::string CalibrationDataPath;//Путь к файлам с расчетами калибровки
 	int SpectraCount;//Количество  градуировочных спектров с аттестованными значениями концентрации
-
 	MatrixXd AnalyseSpectra;//Матрица спектров для анализа
 	
 
@@ -52,6 +52,8 @@ public:
 	StructPLS XNormcoeff;//Искомые параметры разложения нормированной матрицы спектров
 	Matrix<double, Dynamic, CRM_ElementCount> mY;//Матрица концентраций в формате Eigen
 	std::string LEInitialType;//Тут хранится способ инициализации LE для расчетов. Информация будет выводиться в имя файла
+	double RMSEC;//Качество калибровки
+	int TotalPLSRebuildIterat;//Общее количество итераций PLS
 
 	//Методы
 	Calibr(const std::string &InitFileName);//Полный путь к файлу инициализации
