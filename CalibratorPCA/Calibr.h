@@ -15,8 +15,7 @@ class Calibr
 	//Свойства класса
 	std::string InitFile;// Полный путь к файлу инициализации
 	std::string SpectraPath;//Путь к файлам спектров и градуировки;
-	std::string WorkingPath;//Путь к каталогу с файлами спектров для анализа
-	int SpectraCount;//Количество спектров с аттестованными значениями концентрации
+	int SpectraCount;//Количество  градуировочных спектров с аттестованными значениями концентрации
 
 	MatrixXd AnalyseSpectra;//Матрица спектров для анализа
 	
@@ -45,8 +44,9 @@ public:
 		VectorXd B;//Вектор коэффициентов регрессии размерностью A для предсказания Y
 	};
 
+	std::string WorkingPath;//Путь к каталогу с файлами спектров для анализа
 	int Amax;//Максимальное количество Главных компонент
-	Matrix<double, Dynamic, Dynamic> Spectra;//Спектральная матрица в формате Eigen 
+	Matrix<double, Dynamic, Dynamic> Spectra;//Спектральная матрица для калибровки в формате Eigen 
 	VectorXd LE;//Вектор начальных значений LE, инициализированных из файла
 	StructPLS LEcoeff;//Искомые параметры разложения матрицы нормирования
 	StructPLS XNormcoeff;//Искомые параметры разложения нормированной матрицы спектров
@@ -57,7 +57,7 @@ public:
 	Calibr(const std::string &InitFileName);//Полный путь к файлу инициализации
 	~Calibr();
 
-	void LoadSpectra(const std::string &SpectraFileName = "Spectra.dat", const std::string &YFileName="Y.txt", const std::string &LEfilename="LE.dat");
+	void LoadDataForCalibrat(const std::string &SpectraFileName = "Spectra.dat", const std::string &YFileName="Y.txt", const std::string &LEfilename="LE.dat");
 	void SetSumXtoLE();//В качестве параметра инициализации устанавливает все значения вектора LE сумма в каналах
 	void SetMeanXtoLE();//В качестве параметра для инициализации устанавливается среднее значение в спектре
 	void SetMaxXtoLE();//В качестве параметра для инициализации устанавливается среднее значение в спектре
@@ -78,7 +78,8 @@ public:
 	
 	void SaveResultsPLS(const std::string FileName);//Сохранение результатов расчет методом PLS
 	void LoadResultsPLS(const std::string FileName);//Чтение параметров PLS из файла в объект класса
-	void LoadElvaXSpectrum(const std::string FileName, RowVectorXd &X);//Загрузка спектральных интенсивностей из файла ElvaX в вектор-строку
+	void LoadElvaXSpectra(const std::string &Path, MatrixXd &X);//Загрузка всех спектров каталога в матрицу X
+	void LoadElvaXSpectrum(const std::string FullFileName, RowVectorXd &X);//Загрузка спектральных интенсивностей из файла ElvaX в вектор-строку
 
 
 	void MatrixToClipboard(MatrixXd X);//Копирование int матрицы в буфер обмена

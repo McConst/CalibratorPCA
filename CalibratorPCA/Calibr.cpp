@@ -68,7 +68,7 @@ Calibr::~Calibr()
 	//std::cout << "Деструктор Calibr"<<std::endl;
 }
 
-void Calibr::LoadSpectra(const std::string &SpectraFileName, const std::string &YFileName, const std::string &LEfilename)
+void Calibr::LoadDataForCalibrat(const std::string &SpectraFileName, const std::string &YFileName, const std::string &LEfilename)
 /*	Функция выполняет инициализацию массива спектров и концентраций по информации из файлов
 SpectraFileNmae - файл массива спектров
 YFileName - файл с аттестованными значениями концентраций, соответствующих каждому спектру из массива
@@ -371,10 +371,8 @@ void Calibr::MainCalibrationPLS()
 	double F_errLimit;//абсолютная допустимая ошибка вычисления невязки функций
 	double F_err;//Значение ошибки невязки функции
 
-	//for (
-	int elmnt = 0;
-		//; elmnt < CRM_ElementCount; ++elmnt)
-	//Выполняем последовательную градуировку для всех аттестованных элементов
+	
+	//Выполняем градуировку для элемента с порядковым номером elmnt
 	//{
 		int TotalPLSRebuildIterat{ 0 };//Счетчик итераций пересчета PLS scores для поиска LE
 		do
@@ -476,7 +474,7 @@ void Calibr::MainCalibrationPLS()
 					//Вышли из параллельной секции
 
 					F_err = std::abs((F.norm() - minF2.norm()) / std::sqrt(N));
-					if (minF2 == F)//здесь норма - корень из суммы квадратов элементов вектора
+					if (minF2 == F)
 					//Функция расходится. Повторяем итерацию в цикле Do..While при большем лямбда.
 					//С увеличением лямбда приближение идет более мелкими шагами
 					{
@@ -528,8 +526,6 @@ void Calibr::MainCalibrationPLS()
 
 		std::cout << std::endl << std::endl << "Коэффициенты LE для "<< elmnt+1 << "-го элемента:" << std::endl << LEcoeff.B << std::endl << std::endl;
 		std::cout << "RMSEC= " << F.norm()/std::sqrt(N) << std::endl << std::endl;
-	//}
-	std::cout << std::endl << std::endl << "Расчет закончен" << std::endl << LEcoeff.B << std::endl << std::endl;
 }
 
 
@@ -592,11 +588,9 @@ void Calibr::LoadResultsPLS(std::string FileName)
 	ResultPLS.Close();
 }
 
-void Calibr::LoadElvaXSpectrum(const std::string FileName, RowVectorXd &X)
-//Загрузка интенсивностей из файла
+void Calibr::LoadElvaXSpectrum(const std::string FullFileName, RowVectorXd &X)
+//Загрузка интенсивностей из файла ElvaX в вектор-строку
 {
-	std::string FullFileName{ WorkingPath };
-	FullFileName.append(FileName);//Полное имя спектра
 	ifstream spectrum;
 	spectrum.open(FullFileName, ios::binary);
 	spectrum.seekg(0x0100);
@@ -611,4 +605,34 @@ void Calibr::LoadElvaXSpectrum(const std::string FileName, RowVectorXd &X)
 		X(i) = Arr[i];
 	delete[] Arr;
 	
+}
+
+void Calibr::LoadElvaXSpectra(const std::string &Path, MatrixXd &X)
+//Загрузка всех спектров каталога в матрицу X
+{
+	//определяем количество файлов в каталоге
+	std::vector<std::string> FileList;//Вектор со списком файлов
+	FileClass f;
+	std::string mask = Path;
+	mask=CorrectPath(mask);
+	mask.append("*.evt");
+	f.FindFileList(mask, FileList);
+
+	//В цикле создаем матрицу интенсивностей для всех имеющихся файлов
+	for (int i=0; i < FileList.size(); ++i)
+	{
+		RowVectorXd Xrow;
+		std::string FullFileName = WorkingPath;
+		FullFileName.append(FileList[i]);
+		LoadElvaXSpectrum(FullFileName, Xrow);
+		if (i == 0)
+		{
+			X = Xrow;
+		}
+		else
+		{
+			X.conservativeResize(X.rows() + 1, X.cols());
+			X.row(X.rows() - 1) = Xrow;
+		}
+	}
 }

@@ -1,5 +1,7 @@
 #include "pch.h"
 #include <string>
+#include <locale>
+#include <sstream>
 #include <Windows.h>
 
 std::string &CorrectPath(std::string &Path)
@@ -27,6 +29,20 @@ LPWSTR StringToW_Char(const std::string &Str)
 	// ƒобавл€ем нуль в конце, чтобы получить нуль-строку
 	widestr[bufferlen] = 0;
 	return widestr;
+}
+
+std::string W_charToString(const wchar_t *s, char dfault = '?', const std::locale &loc = std::locale())
+//ѕреобразование wchar_t к string
+//символы, не существующие в ASCII будут заменены на ?
+//дл€ преобрвзовани€ в string используютс€ настройки локали loc (текущей по умолчанию)
+{
+	std::ostringstream stm;
+
+	while (*s != L'\0') 
+	{
+		stm << std::use_facet< std::ctype<wchar_t> >(loc).narrow(*s++, dfault);
+	}
+	return stm.str();
 }
 
 void StringToClipboard(const std::string &str)

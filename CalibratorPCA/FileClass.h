@@ -28,6 +28,7 @@ public:
 	bool LoadObject(MatrixXd &X, const Index N, const Index M);//Чтение из файла значений матрицы NxM
 	bool LoadObject(double &DOUBLE);//Читаем значение в переменную типа double
 	
+	void FindFileList(const string &FullFileMask, std::vector<std::string> &Result);//Функция поиска файлов в каталоге по шаблону
 
 	void Close() //Закрыть файл
 	{

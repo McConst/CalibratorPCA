@@ -1,5 +1,6 @@
 #include "pch.h"
 #include "FileClass.h"
+#include "MyFuncs.h"
 #include "Calibr.h"//Библиотека со структурой StructPLS для сохранения параметров расчета
 #include <iostream>
 #include <string>
@@ -11,11 +12,13 @@ using namespace Eigen;
 
 FileClass::FileClass()
 {
+	
 }
 
 
 FileClass::~FileClass()
 {
+	
 }
 
 LPWSTR FileClass::StringToW_Char(const std::string &Str)
@@ -223,4 +226,32 @@ VectorXd B			A * 8 байт	вектор регрессионных коэффициентов B
 	res = res && LoadObject(Temp, X.A, 1);//Читаем вектор коэффициентов B во временную матрицу
 	X.B = Temp;
 	return res;
+}
+
+void FileClass::FindFileList(const string &FullFileMask, std::vector<std::string> &Result)
+//Функция поиска файлов в каталоге по шаблону
+{
+	Result.clear();
+	LPWSTR widestrFileName = StringToW_Char(FullFileMask);
+	WIN32_FIND_DATA FindFileData;//Буфер, которому будут возвращаться результаты поиска из WinAPI
+	HANDLE hFind;//Хэндл операции последовательного поиска
+		
+	hFind = FindFirstFile(widestrFileName, &FindFileData);
+	
+	if (hFind == INVALID_HANDLE_VALUE)
+	//Поиск файла не удался
+	{
+		printf("Ошибка при поиске первого файла. Описание ошибки: (%d)\n", GetLastError());
+		return;
+	}
+
+	//Результат существует, ищем дальше в цикле
+	do
+	{
+		Result.push_back(W_charToString(FindFileData.cFileName));
+	} while (FindNextFile(hFind, &FindFileData));
+
+	FindClose(hFind);
+	delete[] widestrFileName;
+
 }
