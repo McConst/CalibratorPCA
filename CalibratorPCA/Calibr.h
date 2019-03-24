@@ -52,8 +52,13 @@ public:
 	StructPLS XNormcoeff;//Искомые параметры разложения нормированной матрицы спектров
 	Matrix<double, Dynamic, CRM_ElementCount> mY;//Матрица концентраций в формате Eigen
 	std::string LEInitialType;//Тут хранится способ инициализации LE для расчетов. Информация будет выводиться в имя файла
+	std::string CalibrMethod;//Метод калибровки: PLS, PCR
 	double RMSEC;//Качество калибровки
 	int TotalPLSRebuildIterat;//Общее количество итераций PLS
+	std::string CalcParametersFile;//Имя файла с результатами вычислений (или промежуточных вычислений)
+	char FinalPLS;//Флаг окончания расчетов методом PLS
+	char FinalPCR;//Флаг окончания расчетов методом PCR
+
 
 	//Методы
 	Calibr(const std::string &InitFileName);//Полный путь к файлу инициализации

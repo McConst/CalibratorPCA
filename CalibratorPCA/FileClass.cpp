@@ -82,6 +82,24 @@ bool FileClass::SaveObject(Index INT)
 	return (nBytesSave == DataSize && res);
 }
 
+bool FileClass::SaveObject(int INT)
+//Переопределенная функция записи в файл значения типа int
+{
+	int DataSize = sizeof(INT);//Размер байт запрашиваемый на чтение из файла
+	DWORD nBytesSave;//Размер, полученный чтением из файла
+	bool res = WriteFile(hFile, &INT, DataSize, &nBytesSave, NULL);
+	return (nBytesSave == DataSize && res);
+}
+
+bool FileClass::SaveObject(char CHAR)
+//Сохранение в файл объекта типа double
+{
+	int DataSize = sizeof(CHAR);//Размер байт запрашиваемый на чтение из файла
+	DWORD nBytesSave;//Размер, полученный чтением из файла
+	bool res = WriteFile(hFile, &CHAR, DataSize, &nBytesSave, NULL);
+	return (nBytesSave == DataSize && res);
+}
+
 bool FileClass::SaveObject(double DOUBLE)
 //Сохранение в файл объекта типа double
 {
@@ -154,6 +172,26 @@ bool FileClass::LoadObject(Index &INT)
 	DWORD nBytesSave;//Размер, полученный чтением из файла
 	bool res = ReadFile(hFile, &INT, DataSize, &nBytesSave, NULL);
 	//INT = buffer;
+	return (nBytesSave == DataSize && res);
+}
+
+bool FileClass::LoadObject(int &INT)
+//Переопределенная функция записи в файл значения типа int
+{
+	int DataSize = sizeof(INT);//Размер байт запрашиваемый на чтение из файла
+	//int buffer;
+	DWORD nBytesSave;//Размер, полученный чтением из файла
+	bool res = ReadFile(hFile, &INT, DataSize, &nBytesSave, NULL);
+	//INT = buffer;
+	return (nBytesSave == DataSize && res);
+}
+
+bool FileClass::LoadObject(char &CHAR)
+//Переопределенная функция записи в файл значения типа int
+{
+	int DataSize = sizeof(char);//Размер байт запрашиваемый на чтение из файла
+	DWORD nBytesSave;//Размер, полученный чтением из файла
+	bool res = ReadFile(hFile, &CHAR, DataSize, &nBytesSave, NULL);
 	return (nBytesSave == DataSize && res);
 }
 

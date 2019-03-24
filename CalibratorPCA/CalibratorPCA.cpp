@@ -22,16 +22,58 @@ int main(int argc, char* argv[])
 	//setlocale(LC_NUMERIC, "C");//Разделителем дробной части делаем точку
 
 	Path = argv[0];
-	pos = Path.rfind("\\")+1;
+	pos = Path.rfind("\\") + 1;
 	Path = Path.substr(0, pos); //Получили каталог, в котором находятся файлы для расчета калибровки
 	Calibr Calc(Path.append(InitFile));//Инициализируем новый объект Calc данными из файла
 	Calc.LoadInitDataForCalibrat();//Читаем спектральные данные и аттестованных значения на них
-	Calc.InitLE_NonCoherentBackScatter();
 	
-	//Calc.LoadResultsPLS("test.dat");
+	//Блок выбора способа инициализации
+	if (Calc.LEInitialType == "BckSctrng")
+	{
+		Calc.InitLE_NonCoherentBackScatter();
+	}
+	else if (Calc.LEInitialType == "Summ")
+	{
+		Calc.InitLE_SetSumX();
+	}
+	else if (Calc.LEInitialType == "Max")
+	{
+		Calc.InitLE_SetMaxX();
+	}
+	else if (Calc.LEInitialType == "Mean")
+	{
+		Calc.InitLE_SetMeanX();
+	}
 
-	Calc.MainCalibrationPLS();
-	Calc.SaveResultsPLS();//Сохраняем информацию о параметрах разложения LE
+	if (Calc.CalcParametersFile != "")
+	{
+		Calc.LoadResultsPLS(Calc.CalcParametersFile);//Подгружаем файл с промежуточными параметрами калибровки
+	}
+	else
+	//Так как файл с промежуточными расчетами отсутствует, выполняем расчет начальных счетов и коэффициентов для LE
+	//по LE, инициализированным из файлов
+	{
+		Calc.DecomposePLS(Calc.Spectra, Calc.LE, Calc.LEcoeff);//Калибровка по LE для получения начальних значений LECoeff
+	}
+
+		//Блок выбора способа калибровки
+	if (Calc.CalibrMethod == "PLS")
+	{
+		if (!Calc.FinalPLS)
+			//Расчеты ещё не выполнены
+		{
+			Calc.MainCalibrationPLS();
+		}
+		else
+		{
+			std::cout << "Расчеты градуировочных коэффициентов в файле\n" << Calc.CalcParametersFile << "\nзавершены\n";
+		}
+	}
+	else if (Calc.CalibrMethod == "PCR")
+	{
+
+	}
+
 	//system("Pause");
 	
 }

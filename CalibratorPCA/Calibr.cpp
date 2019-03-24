@@ -56,6 +56,18 @@ Calibr::Calibr(const std::string &InitFileName)
 			{
 				CalibrationDataPath = CorrectPath(value);
 			}
+			else if (operat == "CalibrMethod")
+			{
+				CalibrMethod = value;
+			}
+			else if (operat == "CalcParametersFile")
+			{
+				CalcParametersFile = value;
+			}
+			else if (operat == "LEInitialType")
+			{
+				LEInitialType = value;
+			}
 		}
 	}
 	else
@@ -63,6 +75,9 @@ Calibr::Calibr(const std::string &InitFileName)
 		std::cout << "Файл инициализации не найден или не открылся" << std::endl;
 	}
 	file.close();//Закрываем файл
+	FinalPLS=0;
+	FinalPCR = 0;
+	TotalPLSRebuildIterat = 0;//Нулевое начальное количество итераций
 }
 
 
@@ -373,7 +388,7 @@ void Calibr::MainCalibrationPLS(int elmnt)
 	double F_err;//Значение ошибки невязки функции
 
 	
-	DecomposePLS(Spectra, LE, LEcoeff);//Калибровка по LE для получения начальних значений LECoeff
+	
 	//Выполняем градуировку для элемента с порядковым номером elmnt
 	
 	TotalPLSRebuildIterat=0;//Счетчик итераций пересчета PLS scores для поиска LE
@@ -529,12 +544,15 @@ void Calibr::MainCalibrationPLS(int elmnt)
 		if (TotalPLSRebuildIterat % 10 == 0)
 		//Каждые 10 шагов итерации сохраняемся в файл 
 		{
+			FinalPLS = 0;//Выход из цикла не выполнен, продолжаем расчет
 			SaveResultsPLS();
 		}
 	} while ((TotalPLSRebuildIterat < MaxPLSRebuildIterat) && ((OldPLS.B - LEcoeff.B).norm() / std::sqrt(Amax) > iteratErr));
 
 	std::cout << std::endl << std::endl << "Коэффициенты LE для " << elmnt + 1 << "-го элемента:" << std::endl << LEcoeff.B << std::endl << std::endl;
 	std::cout << "RMSEC= " << RMSEC << std::endl << std::endl;
+	FinalPLS = 1;//Расчеты выполнены, сохраняем результаты вычислений в файл с признаком окончания расчетов
+	SaveResultsPLS();//Сохраняем информацию о параметрах разложения LE
 }
 
 
@@ -576,7 +594,7 @@ void Calibr::SaveResultsPLS()
 	std::string FileName = "A";
 	FileName.append(std::to_string(this->Amax));
 	FileName.append(LEInitialType);
-	FileName.append("Iter_");
+	FileName.append("_Iter_");
 	FileName.append(std::to_string(TotalPLSRebuildIterat));
 	FileName.append("RMSEC");
 	FileName.append(std::to_string(RMSEC));
@@ -596,6 +614,8 @@ void Calibr::SaveResultsPLS()
 	}
 	ResultPLS.SaveObject(LEcoeff);
 	ResultPLS.SaveObject(XNormcoeff);
+	ResultPLS.SaveObject(TotalPLSRebuildIterat);
+	ResultPLS.SaveObject(FinalPLS);
 	ResultPLS.Close();
 }
 
@@ -603,7 +623,7 @@ void Calibr::LoadResultsPLS(std::string FileName)
 //Подгружаем результаты расчетов из файла
 {
 	bool res;
-	std::string FullFileName{ SpectraPath };
+	std::string FullFileName{ CalibrationDataPath };
 	FullFileName.append(FileName);
 	FileClass ResultPLS;
 	res = ResultPLS.OpenForRead(FullFileName);//Открываем файл для чтения
@@ -616,6 +636,8 @@ void Calibr::LoadResultsPLS(std::string FileName)
 
 	ResultPLS.LoadObject(LEcoeff);
 	ResultPLS.LoadObject(XNormcoeff);
+	ResultPLS.LoadObject(TotalPLSRebuildIterat);
+	ResultPLS.LoadObject(FinalPLS);
 	ResultPLS.Close();
 }
 
