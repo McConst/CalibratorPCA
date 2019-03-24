@@ -25,14 +25,13 @@ int main(int argc, char* argv[])
 	pos = Path.rfind("\\")+1;
 	Path = Path.substr(0, pos); //Получили каталог, в котором находятся файлы для расчета калибровки
 	Calibr Calc(Path.append(InitFile));//Инициализируем новый объект Calc данными из файла
-	Calc.LoadDataForCalibrat();//Читаем спектральные данные и информацию для калибровки++
-	Calc.SetMaxXtoLE();
-	
-	//Calc.DecomposePLS(Calc.Spectra, Calc.LE, Calc.LEcoeff);//Калибровка по LE для получения начальних значений LECoeff
-	Calc.LoadResultsPLS("test.dat");
+	Calc.LoadInitDataForCalibrat();//Читаем спектральные данные и аттестованных значения на них
+	Calc.InitLE_SetMaxX();
+	Calc.DecomposePLS(Calc.Spectra, Calc.LE, Calc.LEcoeff);//Калибровка по LE для получения начальних значений LECoeff
+	//Calc.LoadResultsPLS("test.dat");
 
 	Calc.MainCalibrationPLS();
-	Calc.SaveResultsPLS("test.dat");//Сохраняем информацию о параметрах разложения LE
+	Calc.SaveResultsPLS();//Сохраняем информацию о параметрах разложения LE
 	//system("Pause");
 	
 }

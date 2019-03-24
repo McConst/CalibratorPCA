@@ -50,22 +50,23 @@ public:
 	VectorXd LE;//Вектор начальных значений LE, инициализированных из файла
 	StructPLS LEcoeff;//Искомые параметры разложения матрицы нормирования
 	StructPLS XNormcoeff;//Искомые параметры разложения нормированной матрицы спектров
-
 	Matrix<double, Dynamic, CRM_ElementCount> mY;//Матрица концентраций в формате Eigen
+	std::string LEInitialType;//Тут хранится способ инициализации LE для расчетов. Информация будет выводиться в имя файла
 
 	//Методы
 	Calibr(const std::string &InitFileName);//Полный путь к файлу инициализации
 	~Calibr();
 
-	void LoadDataForCalibrat(const std::string &SpectraFileName = "Spectra.dat", const std::string &YFileName="Y.txt", const std::string &LEfilename="LE.dat");
-	void SetSumXtoLE();//В качестве параметра инициализации устанавливает все значения вектора LE сумма в каналах
-	void SetMeanXtoLE();//В качестве параметра для инициализации устанавливается среднее значение в спектре
-	void SetMaxXtoLE();//В качестве параметра для инициализации устанавливается среднее значение в спектре
+	void LoadInitDataForCalibrat(const std::string &SpectraFileName = "Spectra.dat", const std::string &YFileName="Y.txt");
+	void InitLE_SetSumX();//В качестве параметра инициализации устанавливает все значения вектора LE сумма в каналах
+	void InitLE_SetMeanX();//В качестве параметра для инициализации устанавливается среднее значение в спектре
+	void InitLE_SetMaxX();//В качестве параметра для инициализации устанавливается среднее значение в спектре
+	void InitLE_NonCoherentBackScatter(const std::string LEFileName="LE.dat");//Инициализация по площади некогерентного обратного рассеяния
 
 	/*Калибровка по PLS. Входное значение Y0 - нецентрированный вектор концентраций одного элемента
 											A - количество Главных Компонент для разложения
 	*/
-	void MainCalibrationPLS();//Главный метод по калибровке с нормированием на внутренний стандарт
+	void MainCalibrationPLS(int elmnt=0);//Главный метод по калибровке с нормированием на внутренний стандарт
 	void DecomposePLS(const MatrixXd &X0, const VectorXd &Y0, StructPLS &Result);//Возвращаем результат по значению, чтобы не потерять при повторном вызове
 	
 	//Функция разложения с нормированием на предсказанный внутренний стандарт, будет использоваться для расчета коэффициентов
@@ -76,7 +77,7 @@ public:
 	double RMSE(VectorXd const &Y0, VectorXd const &Ycalc);// Расчет параметра градуировки. Минимум RMSE - показатель сходимости
 	
 	
-	void SaveResultsPLS(const std::string FileName);//Сохранение результатов расчет методом PLS
+	void SaveResultsPLS();//Сохранение результатов расчет методом PLS
 	void LoadResultsPLS(const std::string FileName);//Чтение параметров PLS из файла в объект класса
 	void LoadElvaXSpectra(const std::string &Path, MatrixXd &X);//Загрузка всех спектров каталога в матрицу X
 	void LoadElvaXSpectrum(const std::string FullFileName, RowVectorXd &X);//Загрузка спектральных интенсивностей из файла ElvaX в вектор-строку

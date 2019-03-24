@@ -68,10 +68,11 @@ Calibr::~Calibr()
 	//std::cout << "Деструктор Calibr"<<std::endl;
 }
 
-void Calibr::LoadDataForCalibrat(const std::string &SpectraFileName, const std::string &YFileName, const std::string &LEfilename)
+void Calibr::LoadInitDataForCalibrat(const std::string &SpectraFileName, const std::string &YFileName)
 /*	Функция выполняет инициализацию массива спектров и концентраций по информации из файлов
-SpectraFileNmae - файл массива спектров
+SpectraFileName - файл массива спектров
 YFileName - файл с аттестованными значениями концентраций, соответствующих каждому спектру из массива
+LE инициализируется самостоятельными публичными методами на выбор
 */
 {
 	//Инициализируем временный динамический векторный массив для чтения концентраций из файлов
@@ -119,10 +120,6 @@ YFileName - файл с аттестованными значениями концентраций, соответствующих каждо
 	//Инициализируем спектральный массив из спектра
 	FileName = SpectraPath;
 	LoadMatrixLong(FileName.append(SpectraFileName), Spectra);//Инициализация матрицы Spectra данными из файла
-	FileName = SpectraPath;
-	LoadVectorLong(FileName.append(LEfilename), LE);//Инициализация вектора LE данными из файла
-	//LoadMatrixDouble(FileName.append(SpectraFileName));//Загрузка спектра с интенсивностями типа double в матрицу
-
 }
 
 
@@ -353,7 +350,7 @@ sX - структура с результатами нормализованного разложения
 	DecomposePLS(Xn, Y0, sX);//Выполняем PLS разложение после нормирования
 }
 
-void Calibr::MainCalibrationPLS()
+void Calibr::MainCalibrationPLS(int elmnt)
 //Главный метод для PLS калибровки с нормированием на внутренний стандарт
 {
 	Index N = Spectra.rows();//Количество спектров
@@ -529,29 +526,47 @@ void Calibr::MainCalibrationPLS()
 }
 
 
-void Calibr::SetSumXtoLE()
+void Calibr::InitLE_SetSumX()
+//В качестве начальных значений для LE используется нормирование на сумму всех интенсивностей в спектре
 {
 	LE = Spectra.rowwise().sum();
-	//std::cout << LE;
+	LEInitialType = "SummNorm";//Нормирование на сумму интенсивностей
 }
 
-void Calibr::SetMeanXtoLE()
+void Calibr::InitLE_SetMeanX()
+//В качестве начальных значений для LE используется нормирование на среднюю интенсивность в спектре
 {
 	LE = Spectra.rowwise().mean();
-	//std::cout << LE;
+	LEInitialType = "MeanNorm";//Нормирование на среднюю интенсивность в спектре
 }
 
-void Calibr::SetMaxXtoLE()
+void Calibr::InitLE_SetMaxX()
+//В качестве начальных значений для LE используется нормирование на интенсивность максимальной линии в спектре
 {
 	LE = Spectra.rowwise().maxCoeff();
-	//std::cout << LE;
+	LEInitialType = "MaxNorm";//Нормирование на максимальную интенсивность в спектре
 }
 
-void Calibr::SaveResultsPLS(const std::string FileName)
+void Calibr::InitLE_NonCoherentBackScatter(const std::string LEFileName)
+//нормирование на интенсивность некогерентного обратного рассеяния
+{
+	std::string FileName = SpectraPath;
+	LoadVectorLong(FileName.append(LEFileName), LE);//Инициализация вектора LE данными из файла
+	LEInitialType = "BckScattrng";//инициализация вектора LE значениями интенсивностей обратного рассеяния
+}
+
+void Calibr::SaveResultsPLS()
 /*Сохранение результатов вычисления на диск в каталог градуировки
 	
 */
 {
+	//Создаем имя файла
+	std::string FileName = "A";
+	FileName.append(std::to_string(this->Amax));
+	FileName.append(LEInitialType);
+
+	//Добавляем расширение для файла c данными нормирования по PLS
+	FileName.append(".nPLS");
 	bool res;
 	std::string FullFileName{ SpectraPath };
 	FullFileName.append(FileName);
