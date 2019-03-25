@@ -5,6 +5,11 @@ VisualStudioVersion = 15.0.28307.329
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "CalibratorPCA", "CalibratorPCA\CalibratorPCA.vcxproj", "{D112580F-5524-421E-A90E-5661575CE69B}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "CalculatorPCA", "CalculatorPCA\CalculatorPCA.vcxproj", "{3B12D362-0126-4947-949F-4F8A2C3C11AB}"
+	ProjectSection(ProjectDependencies) = postProject
+		{D112580F-5524-421E-A90E-5661575CE69B} = {D112580F-5524-421E-A90E-5661575CE69B}
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -17,10 +22,18 @@ Global
 		{D112580F-5524-421E-A90E-5661575CE69B}.Debug|x64.Build.0 = Debug|x64
 		{D112580F-5524-421E-A90E-5661575CE69B}.Debug|x86.ActiveCfg = Debug|Win32
 		{D112580F-5524-421E-A90E-5661575CE69B}.Debug|x86.Build.0 = Debug|Win32
-		{D112580F-5524-421E-A90E-5661575CE69B}.Release|x64.ActiveCfg = Release|x64
-		{D112580F-5524-421E-A90E-5661575CE69B}.Release|x64.Build.0 = Release|x64
+		{D112580F-5524-421E-A90E-5661575CE69B}.Release|x64.ActiveCfg = Debug|x64
+		{D112580F-5524-421E-A90E-5661575CE69B}.Release|x64.Build.0 = Debug|x64
 		{D112580F-5524-421E-A90E-5661575CE69B}.Release|x86.ActiveCfg = Release|Win32
 		{D112580F-5524-421E-A90E-5661575CE69B}.Release|x86.Build.0 = Release|Win32
+		{3B12D362-0126-4947-949F-4F8A2C3C11AB}.Debug|x64.ActiveCfg = Debug|x64
+		{3B12D362-0126-4947-949F-4F8A2C3C11AB}.Debug|x64.Build.0 = Debug|x64
+		{3B12D362-0126-4947-949F-4F8A2C3C11AB}.Debug|x86.ActiveCfg = Debug|Win32
+		{3B12D362-0126-4947-949F-4F8A2C3C11AB}.Debug|x86.Build.0 = Debug|Win32
+		{3B12D362-0126-4947-949F-4F8A2C3C11AB}.Release|x64.ActiveCfg = Release|x64
+		{3B12D362-0126-4947-949F-4F8A2C3C11AB}.Release|x64.Build.0 = Release|x64
+		{3B12D362-0126-4947-949F-4F8A2C3C11AB}.Release|x86.ActiveCfg = Release|Win32
+		{3B12D362-0126-4947-949F-4F8A2C3C11AB}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

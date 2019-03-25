@@ -3,7 +3,7 @@
 
 #include "pch.h"
 #include <iostream>
-#include <cstring>
+#include <string>
 #include <locale.h> /* Для русского языка */
 #include "const.h"
 #include "Calibr.h"
