@@ -52,7 +52,7 @@ public:
 	StructPLS XNormcoeff;//Искомые параметры разложения нормированной матрицы спектров
 	Matrix<double, Dynamic, CRM_ElementCount> mY;//Матрица концентраций в формате Eigen
 	std::string LEInitialType;//Тут хранится способ инициализации LE для расчетов. Информация будет выводиться в имя файла
-	std::string CalibrMethod;//Метод калибровки: PLS, PCR
+	char CalibrMethod[CalibrMethodStringLength];//Метод калибровки: PLS, PCR. 3 символа под метод
 	double RMSEC;//Качество калибровки
 	int TotalPLSRebuildIterat;//Общее количество итераций PLS
 	std::string CalcParametersFile;//Имя файла с результатами вычислений (или промежуточных вычислений)
@@ -79,13 +79,13 @@ public:
 	//Функция разложения с нормированием на предсказанный внутренний стандарт, будет использоваться для расчета коэффициентов
 	void NormDecomposePLS
 		(const VectorXd &B_LE, MatrixXd &T, double Ymean, const MatrixXd &X0, const VectorXd &Y0, StructPLS &sX);
-
+	
 	void  ScorePredictPLS(const VectorXd &B, const MatrixXd &T, double Ymean, VectorXd &Y);//PLS прогноз через счета и коэффициенты регрессии. Y-результаты прогноза
 	double RMSE(VectorXd const &Y0, VectorXd const &Ycalc);// Расчет параметра градуировки. Минимум RMSE - показатель сходимости
 	
 	
 	void SaveResultsPLS();//Сохранение результатов расчет методом PLS
-	void LoadResultsPLS(const std::string FileName);//Чтение параметров PLS из файла в объект класса
+	ProcessError LoadResultsPLS(const std::string FileName);//Чтение параметров PLS из файла в объект класса
 	void LoadElvaXSpectra(const std::string &Path, MatrixXd &X);//Загрузка всех спектров каталога в матрицу X
 	void LoadElvaXSpectrum(const std::string FullFileName, RowVectorXd &X);//Загрузка спектральных интенсивностей из файла ElvaX в вектор-строку
 

@@ -100,6 +100,14 @@ bool FileClass::SaveObject(char CHAR)
 	return (nBytesSave == DataSize && res);
 }
 
+bool FileClass::SaveObject(char *CHAR, int charSize)
+//Сохранение в файл нуль-строки *CHAR длиной charSize
+{
+	DWORD nBytesSave;//Размер, полученный чтением из файла
+	bool res = WriteFile(hFile, CHAR, charSize, &nBytesSave, NULL);
+	return (nBytesSave == charSize && res);
+}
+
 bool FileClass::SaveObject(double DOUBLE)
 //Сохранение в файл объекта типа double
 {
@@ -194,6 +202,15 @@ bool FileClass::LoadObject(char &CHAR)
 	bool res = ReadFile(hFile, &CHAR, DataSize, &nBytesSave, NULL);
 	return (nBytesSave == DataSize && res);
 }
+
+bool FileClass::LoadObject(char *CHAR, int charSize)
+//чтение из файла нуль-строки длиной charSize байт
+{
+	DWORD nBytesSave;//Размер, полученный чтением из файла
+	bool res = ReadFile(hFile, CHAR, charSize, &nBytesSave, NULL);
+	return (nBytesSave == charSize && res);
+}
+
 
 bool FileClass::LoadObject(MatrixXd &X, const Index N, const Index M)
 //Переопределенная функция чтения матрицы из файла значения типа double

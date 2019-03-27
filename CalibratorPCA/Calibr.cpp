@@ -1,4 +1,6 @@
 
+#define _CRT_SECURE_NO_WARNINGS//отключаем предупреждения библиотеки CRT в компиляторе
+
 #include "pch.h"
 #include "Calibr.h"
 #include "Split.h"
@@ -58,7 +60,8 @@ Calibr::Calibr(const std::string &InitFileName)
 			}
 			else if (operat == "CalibrMethod")
 			{
-				CalibrMethod = value;
+				strncpy(CalibrMethod, value.c_str(), CalibrMethodStringLength);
+				CalibrMethod[CalibrMethodStringLength];
 			}
 			else if (operat == "CalcParametersFile")
 			{
@@ -612,6 +615,7 @@ void Calibr::SaveResultsPLS()
 		std::system("Pause");
 		exit(FILE_SAVING_ERROR);
 	}
+	ResultPLS.SaveObject(CalibrMethod, CalibrMethodStringLength);//Сохраняем в файл тип используемой калибровки
 	ResultPLS.SaveObject(LEcoeff);
 	ResultPLS.SaveObject(XNormcoeff);
 	ResultPLS.SaveObject(TotalPLSRebuildIterat);
@@ -619,7 +623,7 @@ void Calibr::SaveResultsPLS()
 	ResultPLS.Close();
 }
 
-void Calibr::LoadResultsPLS(std::string FileName)
+ProcessError Calibr::LoadResultsPLS(std::string FileName)
 //Подгружаем результаты расчетов из файла
 {
 	bool res;
@@ -631,9 +635,16 @@ void Calibr::LoadResultsPLS(std::string FileName)
 	{
 		std::cout << "Не удалось открыть файл\n" << FullFileName<<"\nдля чтения данных PLS-градуировки";
 		std::system("Pause");
-		exit(FILE_READING_ERROR);
+		return FILE_READING_ERROR;
 	}
-
+	ResultPLS.LoadObject(CalibrMethod, CalibrMethodStringLength);//читаем из файла тип используемой калибровки
+	if (_stricmp(CalibrMethod, "PLS"))
+	//строки не равны. Калибровка не PLS выходим по ошибке
+	{
+		std::cout << "Файл:\n"<< FullFileName<<"\nпредназначен для калибровки методом "<< CalibrMethod<<"\n"
+			<<"Выберите файл с калибровкой по методу PLS\n\n";
+		std::system("Pause");
+	}
 	ResultPLS.LoadObject(LEcoeff);
 	ResultPLS.LoadObject(XNormcoeff);
 	ResultPLS.LoadObject(TotalPLSRebuildIterat);

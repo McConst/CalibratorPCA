@@ -1,6 +1,8 @@
 ﻿// CalibratorPCA.cpp : Этот файл содержит функцию "main". Здесь начинается и заканчивается выполнение программы.
 //
 
+#define _CRT_SECURE_NO_WARNINGS//Отключаем предупреждения CRT в компиляторе
+
 #include "pch.h"
 #include <iostream>
 #include <string>
@@ -53,15 +55,19 @@ int main(int argc, char* argv[])
 	//Так как файл с промежуточными расчетами отсутствует, выполняем расчет начальных счетов и коэффициентов для LE
 	//по LE, инициализированным из файлов
 	{
-		Calc.DecomposePLS(Calc.Spectra, Calc.LE, Calc.LEcoeff);//Калибровка по LE для получения начальних значений LECoeff
+		if (!_stricmp(Calc.CalibrMethod, "PLS"))
+		{
+			Calc.DecomposePLS(Calc.Spectra, Calc.LE, Calc.LEcoeff);//Калибровка по LE для получения начальних значений LECoeff
+		}
 	}
 
 		//Блок выбора способа калибровки
-	if (Calc.CalibrMethod == "PLS")
+	if (!_stricmp(Calc.CalibrMethod, "PLS"))
 	{
 		if (!Calc.FinalPLS)
 			//Расчеты ещё не выполнены
 		{
+
 			Calc.MainCalibrationPLS();
 		}
 		else
