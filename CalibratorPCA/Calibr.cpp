@@ -436,7 +436,7 @@ void Calibr::MainCalibrationPLS(int elmnt)
 			F_errLimit = F.norm() / std::sqrt(N)*err_relatCompareResult;//абсолютная допустимая ошибка вычисления невязки функций
 
 			Jt = Jac.transpose();
-			JtJ = Jt * Jac;
+			JtJ = Jac.transpose() * Jac;
 			int iteratCount = 0;
 			bool DoIterat;//Флаг продолжения итерации при большем лямбда, если при текущем расходится
 			VectorXd NewB; //Коэффициенты регрессии, которые будут действовать на выходе из цикла
@@ -650,6 +650,7 @@ ProcessError Calibr::LoadResultsPLS(std::string FileName)
 	ResultPLS.LoadObject(TotalPLSRebuildIterat);
 	ResultPLS.LoadObject(FinalPLS);
 	ResultPLS.Close();
+	return ProcessError::OK;
 }
 
 void Calibr::LoadElvaXSpectrum(const std::string FullFileName, RowVectorXd &X)
@@ -699,4 +700,17 @@ void Calibr::LoadElvaXSpectra(const std::string &Path, MatrixXd &X)
 			X.row(X.rows() - 1) = Xrow;
 		}
 	}
+}
+
+VectorXd Calibr::SpectraPredictPLS(const MatrixXd &X, const StructPLS LEcoeff, const StructPLS NormXcoeff)
+//Предсказание концентрации матрицы неизвестных спектров через LECoeff - коэффициенты PLS для поиска интенсивности линии нормирования
+// и NormXcoeff - коэффициенты PLS для нормированного спектра
+{
+
+}
+
+void Calibr::PredictPLS(const MatrixXd &X, const StructPLS &Coeff, VectorXd &Ycalc)
+//Простой расчет откликов Y для матрицы неизвестных спектров X по PLS параметрам Coeff
+{
+
 }

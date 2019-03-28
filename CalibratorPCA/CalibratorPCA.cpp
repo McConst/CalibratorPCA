@@ -67,8 +67,7 @@ int main(int argc, char* argv[])
 		if (!Calc.FinalPLS)
 			//Расчеты ещё не выполнены
 		{
-
-			Calc.MainCalibrationPLS();
+			Calc.MainCalibrationPLS(1);
 		}
 		else
 		{

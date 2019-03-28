@@ -81,6 +81,8 @@ public:
 		(const VectorXd &B_LE, MatrixXd &T, double Ymean, const MatrixXd &X0, const VectorXd &Y0, StructPLS &sX);
 	
 	void  ScorePredictPLS(const VectorXd &B, const MatrixXd &T, double Ymean, VectorXd &Y);//PLS прогноз через счета и коэффициенты регрессии. Y-результаты прогноза
+	void PredictPLS(const MatrixXd &X, const StructPLS &Coeff, VectorXd &Ycalc);//Простой расчет откликов Ycalc для неизвестного спектра X по PLS параметрам Coeff
+	VectorXd SpectraPredictPLS(const MatrixXd &X, const StructPLS LEcoeff, const StructPLS NormXcoeff);//Предсказание концентрации неизвестн. спектра через коэфф. PLS до и после нормирования
 	double RMSE(VectorXd const &Y0, VectorXd const &Ycalc);// Расчет параметра градуировки. Минимум RMSE - показатель сходимости
 	
 	
