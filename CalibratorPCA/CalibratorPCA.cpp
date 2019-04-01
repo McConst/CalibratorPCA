@@ -26,12 +26,15 @@ int main(int argc, char* argv[])
 	Path = argv[0];
 	pos = Path.rfind("\\") + 1;
 	Path = Path.substr(0, pos); //Получили каталог, в котором находятся файлы для расчета калибровки
-	Calibr Calc(Path.append(InitFile));//Инициализируем новый объект Calc данными из файла
-	Calc.LoadInitDataForCalibrat();//Читаем спектральные данные и аттестованных значения на них
+
+	Calibr Calc(Path.append(InitFile));//Инициализируем новый объект Calc данными из файла настроек
+	
+	Calc.LoadInitDataForCalibrat();//Подгружаем массив спектров или спектральные файлы, присваиваем аттестованные значения
 	
 	//Блок выбора способа инициализации
 	if (Calc.LEInitialType == "BckSctrng")
 	{
+		//Читаем спектральные данные и аттестованных значения на них из файлов Spectra.dat и Y.txt
 		Calc.InitLE_NonCoherentBackScatter();
 	}
 	else if (Calc.LEInitialType == "Summ")
@@ -67,7 +70,7 @@ int main(int argc, char* argv[])
 		if (!Calc.FinalPLS)
 			//Расчеты ещё не выполнены
 		{
-			Calc.MainCalibrationPLS(1);
+			Calc.MainCalibrationPLS(0);
 		}
 		else
 		{

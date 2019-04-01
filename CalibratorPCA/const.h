@@ -17,8 +17,8 @@ const std::string CalculatorInitFile{ "CalculatorPCA.ini" };//Файл настройк для 
 
 const int CRM_ElementCount{ 3 };//Количество аттестованных элементов в стандартном образце, для которых строится градуировка, 3
 const int ChannelCount{ 2047 };//Количество спектральных каналов, 2047
-const double err_relatDiffStep{ 1e-9 };//Относительная ошибка численного дифференцирования (приращение аргумента)
-const double err_relatCompareResult{ 1e-7 };//ошибка для сравнения чисел типа double
+const double err_relatDiffStep{ 1e-8 };//Относительная ошибка численного дифференцирования (приращение аргумента)
+const double err_relatCompareResult{ 1e-6 };//ошибка для сравнения чисел типа double
 const int MaxLambdaIterat{ 50 };//Количество итераций при подборе шага Лямбда. Больше 50 не имеет смысла, так как шаг меняется на 2^50 степени
 const char CalibrMethodStringLength = 4;//Количество символов, обозначающее метод калибровки +1 (PLS, PCR - 3 символа)
 

@@ -14,6 +14,7 @@
 #include <vector>
 #include <Eigen/Dense>//Библиотека Eigen
 #include <Windows.h>//WinAPI
+#include <map>//библиотека map для инициализации спектров аттестованными концентрациями по их имени
 #include <omp.h>//Библиотека параллельного программирования OpenMP
 
 using namespace Eigen;
@@ -39,9 +40,9 @@ Calibr::Calibr(const std::string &InitFileName)
 			}
 			//Инициализируем значения
 			size_t pos = str.find("\t");
-			std::string operat = str.substr(0,pos);
-			pos = str.rfind("\t")+1;
-			std::string value = str.substr(pos, str.length()-pos);
+			std::string operat = str.substr(0, pos);
+			pos = str.rfind("\t") + 1;
+			std::string value = str.substr(pos, str.length() - pos);
 			if (operat == "Amax")
 			{
 				Amax = std::stoi(value);
@@ -52,7 +53,7 @@ Calibr::Calibr(const std::string &InitFileName)
 			}
 			else if (operat == "WorkingPath")
 			{
-				WorkingPath= CorrectPath(value);
+				WorkingPath = CorrectPath(value);
 			}
 			else if (operat == "CalibrationDataPath")
 			{
@@ -71,6 +72,10 @@ Calibr::Calibr(const std::string &InitFileName)
 			{
 				LEInitialType = value;
 			}
+			else if (operat=="SpectaLoadingMethod")
+			{
+				SpectaLoadingMethod = value[0]-0x30;
+			}
 		}
 	}
 	else
@@ -78,7 +83,7 @@ Calibr::Calibr(const std::string &InitFileName)
 		std::cout << "Файл инициализации не найден или не открылся" << std::endl;
 	}
 	file.close();//Закрываем файл
-	FinalPLS=0;
+	FinalPLS = 0;
 	FinalPCR = 0;
 	TotalPLSRebuildIterat = 0;//Нулевое начальное количество итераций
 }
@@ -90,17 +95,91 @@ Calibr::~Calibr()
 	//std::cout << "Деструктор Calibr"<<std::endl;
 }
 
-void Calibr::LoadInitDataForCalibrat(const std::string &SpectraFileName, const std::string &YFileName)
+
+void Calibr::LoadInitDataForCalibrat(const std::string &SpectraFileName, const std::string &YFileName, const std::string &NamesFile)
 /*	Функция выполняет инициализацию массива спектров и концентраций по информации из файлов
-SpectraFileName - файл массива спектров
+SpectraFileName - файл массива спектров 
 YFileName - файл с аттестованными значениями концентраций, соответствующих каждому спектру из массива
 LE инициализируется самостоятельными публичными методами на выбор
 */
 {
-	//Инициализируем временный динамический векторный массив для чтения концентраций из файлов
-	std::vector<std::vector<double> > Y0; // Временный векторный массив аттестованных концентраций. Первая размерн. - СО, втор. размерн. - элемент
+	if (SpectaLoadingMethod==1)
+	//Инициализация спектральных данных из файлов спектрометра *.evt и файлов Names.txt и Y.txt
+	{
+		std::vector<std::vector<double> > Y0;//Временный векторый массив с аттестованными значениями
+		LoadY(YFileName, Y0);//Подгружаем в двумерный массив типа Vector аттестованные концентрации из файла
+		std::vector<std::string> Names;
+		LoadNames(Names);
+		map <std::string, int> ConcIndex;//Контейнер для поиска аттестованной концентрации по имени файла
+		for (int i = 0; i < Names.size(); ++i)
+			ConcIndex[Names[i]] = i;//Присваиваем имени спектра индекс, по которому будем искать концентрацию
+
+		//Считываем из файлов *.evt спектральные данные
+		//список файловых имен получаем в LoadSpectraNames, по которому будем инициализировать массив концентраций mY
+		std::vector < std::string > LoadedSpectraNames= LoadElvaXSpectra(SpectraPath, Spectra);
+		mY.resize(SpectraCount, CRM_ElementCount);
+		for (int i = 0; i < SpectraCount; ++i)
+			for (int j = 0; j < CRM_ElementCount; ++j)
+			{
+				std::string str = LoadedSpectraNames[i].substr(0, LoadedSpectraNames[i].length() - 4);
+				mY(i, j) = Y0[ConcIndex[str]][j];
+			}
+	}
+	else
+	//Чтение спектральных данных из файла SpectraFileName и аттестованных концентраций из файла YFileName
+	{
+		//Инициализируем временный динамический векторный массив для чтения концентраций из файлов
+		std::vector<std::vector<double> > Y0; // Временный векторный массив аттестованных концентраций. Первая размерн. - СО, втор. размерн. - элемент
+		LoadY(YFileName, Y0);//Подгружаем в двумерный массив типа Vector аттестованные концентрации из файла
+
+		//Перебрасываем концентрации из векторного динамического массива в матрицу Eigen
+		mY.resize(SpectraCount, CRM_ElementCount);
+		for (int i = 0; i < SpectraCount; ++i)
+			for (int j = 0; j < CRM_ElementCount; ++j)
+			{
+				mY(i, j) = Y0[i][j];
+			}
+
+		//Инициализируем спектральный массив из файла Spectra.dat
+		std::string FileName = SpectraPath;
+		LoadMatrixLong(FileName.append(SpectraFileName), Spectra);//Инициализация матрицы Spectra данными из файла
+	}
+}
+
+void Calibr::LoadNames(std::vector<std::string> &Names, const std::string &NamesFileName)
+//В вектор Names из файла NamesFileName подгружают имена стандартных образцов
+//имена необходимы для поиска аттестованных значений для спектра
+{
+	std::string FileName = SpectraPath;
+	FileName.append(NamesFileName);
+	std::ifstream file;
+	file.open(FileName);//Создаем объект file для чтения и открываем по имени
+	if (file.is_open())
+	{
+		Names.clear();//Очищаем массив перед заполнением
+		std::string str;
+		while (!file.eof())
+		{
+			getline(file, str);
+			if (str != "\0")
+			{
+				Names.push_back(str);
+			}
+		}
+	}
+	else
+	{
+		std::cout << "Файл аттестованных значений для градиуровки не найден или не открылся" << std::endl;
+	}
+	file.close();//Закрываем файл
+
+}
 
 
+void Calibr::LoadY(const std::string &YFileName, std::vector<std::vector<double> > &Y0)
+//Подгрузка концентраций из файла YFileName в вектор для дальнейшей обработки
+
+{
 	std::string FileName = SpectraPath;
 	FileName.append(YFileName);
 	std::ifstream file;
@@ -127,29 +206,15 @@ LE инициализируется самостоятельными публичными методами на выбор
 	}
 	else
 	{
-		std::cout << "Файл инициализации не найден или не открылся" << std::endl;
+		std::cout << "Файл аттестованных значений для градиуровки не найден или не открылся" << std::endl;
 	}
 	file.close();//Закрываем файл
-
-	//Перебрасываем концентрации из векторного динамического массива в матрицу Eigen
-	mY.resize(SpectraCount, CRM_ElementCount);
-	for(int i=0;i<SpectraCount;++i)
-		for (int j = 0; j < CRM_ElementCount; ++j)
-		{
-			mY(i, j) = Y0[i][j];
-		}
-	
-	//Инициализируем спектральный массив из спектра
-	FileName = SpectraPath;
-	LoadMatrixLong(FileName.append(SpectraFileName), Spectra);//Инициализация матрицы Spectra данными из файла
 }
-
-
 
 int Calibr::LoadMatrixLong(const std::string &FileName, MatrixXd &X)
 //Инициализация двумерной матрицы X данными из файла
 {
-	int* Arr = new int [SpectraCount*ChannelCount];//Создаем массив для чтения целочисленных спектров
+	int* Arr = new int[SpectraCount*ChannelCount];//Создаем массив для чтения целочисленных спектров
 
 	// Преобразуем строку типа String к w_string
 	LPWSTR widestrFileName = StringToW_Char(FileName);
@@ -162,8 +227,8 @@ int Calibr::LoadMatrixLong(const std::string &FileName, MatrixXd &X)
 	DWORD nBytesRead;//Размер, полученный чтением из файла
 	int res = ReadFile(hFile, Arr, DataSize, &nBytesRead, 0);//В файле массив Spectra расположен поколоночно!!!!
 	CloseHandle(hFile);
-	X.resize(SpectraCount,ChannelCount);
-	for (int i=0;i<SpectraCount*ChannelCount;++i)
+	X.resize(SpectraCount, ChannelCount);
+	for (int i = 0; i < SpectraCount*ChannelCount; ++i)
 	{
 		X(i % SpectraCount, i / SpectraCount) = Arr[i];//Инициализация массива Spectra для расчетов
 	}
@@ -235,7 +300,7 @@ void Calibr::DecomposePLS(const MatrixXd &X0, const VectorXd &Y0, StructPLS &Res
 	//Result.Xmean.resize(ChannelCount);
 	MatrixXd Xt, XXt;
 	double YtXXtY, c, TtT;
-	
+
 	Result.N = Y0.rows();//Количество строк
 	Result.M = X0.cols();//Количество каналов
 	Result.A = Amax;//Количество ГК
@@ -247,13 +312,13 @@ void Calibr::DecomposePLS(const MatrixXd &X0, const VectorXd &Y0, StructPLS &Res
 	Result.Q.resize(Result.A);//Вектор Q-нагрузок
 
 	Result.Xmean = X0.colwise().mean();//Вектор-строка для центров
-	MatrixXd X = X0.rowwise()-Result.Xmean;//Центрированная матрица спектров
+	MatrixXd X = X0.rowwise() - Result.Xmean;//Центрированная матрица спектров
 	Result.Ymean = Y0.mean();//центр концентраций
 	VectorXd Y = Y0.array() - Result.Ymean;//Центрированный вектор концентраций
 	VectorXd Y1 = Y;//Запоминаем Y перед циклом итераций. Пригодится при расчете регрессионных коэффициентов
 
 	for (int A = 0; A < Amax; ++A)
-	//В цикле последовательно расчитываем Главные Компоненты по PLS1 (NIPALS)
+		//В цикле последовательно расчитываем Главные Компоненты по PLS1 (NIPALS)
 	{
 		Xt = X.transpose();
 		YtXXtY = Y.transpose()*X*Xt*Y;
@@ -261,8 +326,8 @@ void Calibr::DecomposePLS(const MatrixXd &X0, const VectorXd &Y0, StructPLS &Res
 		Result.W.col(A) = c * Xt*Y;
 		Result.T.col(A) = X * Result.W.col(A);//Расчитываем счета компоненты А
 		TtT = Result.T.col(A).transpose()*Result.T.col(A);
-		Result.P.col(A)=Xt*Result.T.col(A)/TtT;
-		Result.Q.row(A) = (Y.transpose()*Result.T.col(A))/TtT;
+		Result.P.col(A) = Xt * Result.T.col(A) / TtT;
+		Result.Q.row(A) = (Y.transpose()*Result.T.col(A)) / TtT;
 		Result.E = X - Result.T.col(A)*Result.P.col(A).transpose();
 		Result.F = Y - Result.T.col(A)*Result.Q(A);
 		//Копируем переменные для следующей итерации
@@ -270,7 +335,7 @@ void Calibr::DecomposePLS(const MatrixXd &X0, const VectorXd &Y0, StructPLS &Res
 		X = Result.E;
 	}
 	//Вычисляем коэффициенты регрессии
-	MatrixXd Tt=Result.T.transpose();
+	MatrixXd Tt = Result.T.transpose();
 	Result.B = (Tt*Result.T).inverse()*Tt*Y1;
 	return;
 }
@@ -352,7 +417,7 @@ double Calibr::RMSE(const VectorXd &Y0, const VectorXd &Ycalc)
 }
 
 void Calibr::NormDecomposePLS
-	(const VectorXd &B_LE, MatrixXd &T, double Ymean, const MatrixXd &X0, const VectorXd &Y0, StructPLS &sX)
+(const VectorXd &B_LE, MatrixXd &T, double Ymean, const MatrixXd &X0, const VectorXd &Y0, StructPLS &sX)
 /*Метод разложения спектральной матрицы с учетом нормализации
 Входные параметры:
 B_LE - коэффициенты для нахождения LE
@@ -390,11 +455,11 @@ void Calibr::MainCalibrationPLS(int elmnt)
 	double F_errLimit;//абсолютная допустимая ошибка вычисления невязки функций
 	double F_err;//Значение ошибки невязки функции
 
-	
-	
+
+
 	//Выполняем градуировку для элемента с порядковым номером elmnt
-	
-	TotalPLSRebuildIterat=0;//Счетчик итераций пересчета PLS scores для поиска LE
+
+	TotalPLSRebuildIterat = 0;//Счетчик итераций пересчета PLS scores для поиска LE
 	do
 		//Цикл перерасчета параметров PLS для поиска коэффициентов нормирования через матрицу X
 	{
@@ -454,11 +519,12 @@ void Calibr::MainCalibrationPLS(int elmnt)
 				{
 					//Во всех потоках инициализируем локальные переменные
 					VectorXd NewB_local;//Вектор коэффициентов, рассчитываемый параллельно в цикле for
+					VectorXd NewConc_local;//Вектор расчетных концентраций
 					VectorXd db_local;//Вектор приращения коэффициентов в параллельном цикле for
 					VectorXd F2(N);
 					double lambda_local;//Коэффициент лямбда в параллельном потоке
 
-#pragma omp	for ordered private(NewXCoeff, NewConc)
+#pragma omp	for ordered private(NewXCoeff)
 					for (int i = 0; i < MaxThreads; ++i)
 #pragma omp ordered
 					{
@@ -471,8 +537,8 @@ void Calibr::MainCalibrationPLS(int elmnt)
 						//Снова проводим нормированное PLS-разложение для проверки сходимости невязки к минимуму при новых коэфф. B
 						NormDecomposePLS(NewB_local, LEcoeff.T, LEcoeff.Ymean, Spectra, mY.col(elmnt), NewXCoeff);
 						//Выполняем расчет новых прогнозных значений при новых коэффициентах
-						ScorePredictPLS(NewXCoeff.B, NewXCoeff.T, NewXCoeff.Ymean, NewConc);
-						F2 = mY.col(elmnt) - NewConc;//Считаем невязку при новых коэффициентах	
+						ScorePredictPLS(NewXCoeff.B, NewXCoeff.T, NewXCoeff.Ymean, NewConc_local);
+						F2 = mY.col(elmnt) - NewConc_local;//Считаем невязку при новых коэффициентах	
 					}
 
 #pragma omp critical(bestLambdaSearch)
@@ -484,6 +550,7 @@ void Calibr::MainCalibrationPLS(int elmnt)
 						{
 							//Сохраняем лучшие данные
 							minF2 = F2;
+							NewConc = NewConc_local;
 							NewB = NewB_local;
 							lambda = lambda_local;
 							dB = db_local;
@@ -493,7 +560,7 @@ void Calibr::MainCalibrationPLS(int elmnt)
 
 				//Вышли из параллельной секции
 
-				F_err = std::abs((F.norm() - minF2.norm()) / std::sqrt(N));
+				F_err = std::abs((F - minF2).norm() / std::sqrt(N));
 				if (minF2 == F)
 					//Функция расходится. Повторяем итерацию в цикле Do..While при большем лямбда.
 					//С увеличением лямбда приближение идет более мелкими шагами
@@ -506,10 +573,6 @@ void Calibr::MainCalibrationPLS(int elmnt)
 					DoIterat = false;//При данном лямбда регрессия сходится. Можно выходить из цикла
 				}
 
-				/*if ((TotalPLSRebuildIterat == 18) && (TotalIterat == 20))
-				{
-					std::cout << "stop\n";
-				}*/
 				++iteratCount;
 				/*Условия выхода из цикла:
 				1. Превышено количество максимальных итераций
@@ -529,6 +592,7 @@ void Calibr::MainCalibrationPLS(int elmnt)
 			RMSEC = F.norm() / std::sqrt(N);
 			std::cout << "\r" << "Элемент " << elmnt + 1 << ", Перестроено PLS: " << TotalPLSRebuildIterat << ", Шаг: " << TotalIterat;
 			std::cout << ", ошибка dB в LevMaq: " << dB.norm() / std::sqrt(Amax) << ", RMSEC= " << F.norm() / std::sqrt(N) << "   ";
+
 			/*Условия выхода из цикла:
 			1. Превышено количество максимальных итераций
 			2. Ошибка по коэффициентам не превышает ошибку вычислений
@@ -543,12 +607,12 @@ void Calibr::MainCalibrationPLS(int elmnt)
 		OldPLS = LEcoeff;
 		DecomposePLS(Spectra, LE, LEcoeff);//Выполнили переразложение
 		std::cout << std::endl << "Ошибка коэффициентов B_LE между итерациями: " << (OldPLS.B - LEcoeff.B).norm() / std::sqrt(Amax) << std::endl;
-		
 		if (TotalPLSRebuildIterat % 10 == 0)
-		//Каждые 10 шагов итерации сохраняемся в файл 
+			//Каждые 10 шагов итерации сохраняемся в файл 
 		{
 			FinalPLS = 0;//Выход из цикла не выполнен, продолжаем расчет
 			SaveResultsPLS();
+			cout << "Расчетные концентрации:\n" << NewConc.block<25, 1>(0, 0) << "\n\n";
 		}
 	} while ((TotalPLSRebuildIterat < MaxPLSRebuildIterat) && ((OldPLS.B - LEcoeff.B).norm() / std::sqrt(Amax) > iteratErr));
 
@@ -590,7 +654,7 @@ void Calibr::InitLE_NonCoherentBackScatter(const std::string LEFileName)
 
 void Calibr::SaveResultsPLS()
 /*Сохранение результатов вычисления на диск в каталог градуировки
-	
+
 */
 {
 	//Создаем имя файла
@@ -608,7 +672,7 @@ void Calibr::SaveResultsPLS()
 	std::string FullFileName{ CalibrationDataPath };
 	FullFileName.append(FileName);
 	FileClass ResultPLS;
-	res=ResultPLS.OpenForSave(FullFileName);//Открываем файл для записи
+	res = ResultPLS.OpenForSave(FullFileName);//Открываем файл для записи
 	if (!res)
 	{
 		std::cout << "Не удалось открыть файл для записи параметров градуировки\n";
@@ -633,16 +697,16 @@ ProcessError Calibr::LoadResultsPLS(std::string FileName)
 	res = ResultPLS.OpenForRead(FullFileName);//Открываем файл для чтения
 	if (!res)
 	{
-		std::cout << "Не удалось открыть файл\n" << FullFileName<<"\nдля чтения данных PLS-градуировки";
+		std::cout << "Не удалось открыть файл\n" << FullFileName << "\nдля чтения данных PLS-градуировки";
 		std::system("Pause");
 		return FILE_READING_ERROR;
 	}
 	ResultPLS.LoadObject(CalibrMethod, CalibrMethodStringLength);//читаем из файла тип используемой калибровки
 	if (_stricmp(CalibrMethod, "PLS"))
-	//строки не равны. Калибровка не PLS выходим по ошибке
+		//строки не равны. Калибровка не PLS выходим по ошибке
 	{
-		std::cout << "Файл:\n"<< FullFileName<<"\nпредназначен для калибровки методом "<< CalibrMethod<<"\n"
-			<<"Выберите файл с калибровкой по методу PLS\n\n";
+		std::cout << "Файл:\n" << FullFileName << "\nпредназначен для калибровки методом " << CalibrMethod << "\n"
+			<< "Выберите файл с калибровкой по методу PLS\n\n";
 		std::system("Pause");
 	}
 	ResultPLS.LoadObject(LEcoeff);
@@ -658,36 +722,43 @@ void Calibr::LoadElvaXSpectrum(const std::string FullFileName, RowVectorXd &X)
 {
 	ifstream spectrum;
 	spectrum.open(FullFileName, ios::binary);
-	spectrum.seekg(0x0100);
-	DWORD ChannelCount;
-	spectrum.read((char*) &ChannelCount, sizeof(DWORD));
-	//Переопределили вектор-строку под размер спектра в файле. Размер спектра уменьшили на 1, так как последний канал не используется
-	X.resize(--ChannelCount);
-	DWORD* Arr = new DWORD[ChannelCount];//Определили массив под чтение спектра
-	spectrum.read((char*)Arr, ChannelCount * sizeof(DWORD));//Считываем интенсивности в каналах
-	spectrum.close();
-	for (DWORD i = 0; i < ChannelCount; ++i)
-		X(i) = Arr[i];
-	delete[] Arr;
-	
+	if (spectrum.is_open())
+	{
+		spectrum.seekg(0x0100);
+		DWORD ChannelCount;
+		spectrum.read((char*)&ChannelCount, sizeof(DWORD));
+		//Переопределили вектор-строку под размер спектра в файле. Размер спектра уменьшили на 1, так как последний канал не используется
+		X.resize(--ChannelCount);
+		DWORD* Arr = new DWORD[ChannelCount];//Определили массив под чтение спектра
+		spectrum.read((char*)Arr, ChannelCount * sizeof(DWORD));//Считываем интенсивности в каналах
+		spectrum.close();
+		for (DWORD i = 0; i < ChannelCount; ++i)
+			X(i) = Arr[i];
+		delete[] Arr;
+	}
+	else
+	{
+		std::cout << "Спектр\n" << FullFileName << "\nне удалось открыть\n";
+	}
 }
 
-void Calibr::LoadElvaXSpectra(const std::string &Path, MatrixXd &X)
+std::vector<std::string> Calibr::LoadElvaXSpectra(const std::string &Path, MatrixXd &X)
 //Загрузка всех спектров каталога в матрицу X
+//Имена спектров возвращаем в векторе по значению для инициализации концентраций этих спектров, если необходимо
 {
 	//определяем количество файлов в каталоге
 	std::vector<std::string> FileList;//Вектор со списком файлов
 	FileClass f;
 	std::string mask = Path;
-	mask=CorrectPath(mask);
+	mask = CorrectPath(mask);
 	mask.append("*.evt");
 	f.FindFileList(mask, FileList);
 
 	//В цикле создаем матрицу интенсивностей для всех имеющихся файлов
-	for (int i=0; i < FileList.size(); ++i)
+	for (int i = 0; i < FileList.size(); ++i)
 	{
 		RowVectorXd Xrow;
-		std::string FullFileName = WorkingPath;
+		std::string FullFileName = Path;
 		FullFileName.append(FileList[i]);
 		LoadElvaXSpectrum(FullFileName, Xrow);
 		if (i == 0)
@@ -700,17 +771,34 @@ void Calibr::LoadElvaXSpectra(const std::string &Path, MatrixXd &X)
 			X.row(X.rows() - 1) = Xrow;
 		}
 	}
+	return FileList;
 }
 
-VectorXd Calibr::SpectraPredictPLS(const MatrixXd &X, const StructPLS LEcoeff, const StructPLS NormXcoeff)
+VectorXd Calibr::SpectraPredictPLS(const MatrixXd &X, const StructPLS &LEcoeff, const StructPLS &NormXcoeff)
 //Предсказание концентрации матрицы неизвестных спектров через LECoeff - коэффициенты PLS для поиска интенсивности линии нормирования
 // и NormXcoeff - коэффициенты PLS для нормированного спектра
 {
-
+	VectorXd LE(X.rows());//Объявляем вектор LE для получения нормировочных интенсивностей
+	PredictPLS(X, LEcoeff, LE);//Вычисление нормировочных интенсивностей по PLS
+	//Получаем диагональную матрицу нормирования размерностью NxN
+	DiagonalMatrix<double, Dynamic> LEn(LE.array().inverse().matrix());
+	MatrixXd Xnorm = LEn * X;//Нормированная матрица спектров
+	//Чтобы не переопределять память, получаем вектор предсказанных концентраций в массив LE
+	PredictPLS(Xnorm, NormXcoeff, LE);
+	return LE;//Возвращаем из функции результат вычисления предсказанной концентрации
 }
 
-void Calibr::PredictPLS(const MatrixXd &X, const StructPLS &Coeff, VectorXd &Ycalc)
+void Calibr::PredictPLS(const MatrixXd &X0, const StructPLS &Coeff, VectorXd &Ycalc)
 //Простой расчет откликов Y для матрицы неизвестных спектров X по PLS параметрам Coeff
 {
+	MatrixXd T(X0.rows(), Coeff.A);//Матрица счетов NxA (кол-во спектров x кол-во ГК)
+	MatrixXd X = X0.rowwise() - Coeff.Xmean;//Нормирование матрицы аналитических спектров, для которых выполняется прогноз
+	for (int i = 0; i < Coeff.A; ++i)
+		//В цикле последовательно вычисляем матрицу счетов
+	{
+		T.col(i) = X * Coeff.W.col(i);//Нашли счета i+1 компоненты
+		X = X - T.col(i)*Coeff.P.col(i).transpose();//Получаем новую матрицу X
+	}
 
+	Ycalc = (T * Coeff.B).array() + Coeff.Ymean;//Получаем предсказание вектора отклика для матрицы X0 по PLS
 }

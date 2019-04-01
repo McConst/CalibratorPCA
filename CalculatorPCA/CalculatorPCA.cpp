@@ -20,7 +20,11 @@ int main(int argc, char* argv[])
 	string Path = argv[0];
 	string::size_type pos = Path.rfind("\\") + 1;
 	Path = Path.substr(0, pos); //Получили каталог, в котором находится файл инициализации
-	Calibr Calc (Path.append(CalculatorInitFile));//Инициализируем новый объект Calc данными из файла
-	Calc.LoadInitDataForCalibrat();//Читаем спектральные данные и аттестованных значения на них
+	Calibr Calc (Path.append(CalculatorInitFile));//Инициализируем новый объект Calc данными из файла .ini
+	Calc.LoadElvaXSpectra(Calc.WorkingPath, Calc.Spectra);//Читаем спектры из рабочего каталога в матрицу Spectra
+	Calc.LoadResultsPLS(Calc.CalcParametersFile);//Подгружаем градуировочные коэффициенты PLS
+	//Calc.LoadInitDataForCalibrat();//Подгружаем начальный спектр для проверки в Spectra
 
+	//выполняем расчеты
+	cout << "Концентрации:\n" << Calc.SpectraPredictPLS(Calc.Spectra, Calc.LEcoeff, Calc.XNormcoeff);
 }

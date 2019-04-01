@@ -16,11 +16,15 @@ class Calibr
 	std::string InitFile;// Полный путь к файлу инициализации
 	std::string SpectraPath;//Путь к файлам спектров и градуировки;
 	std::string CalibrationDataPath;//Путь к файлам с расчетами калибровки
+	char SpectaLoadingMethod;//Способ загрузки спектров из файла
 	int SpectraCount;//Количество  градуировочных спектров с аттестованными значениями концентрации
-	MatrixXd AnalyseSpectra;//Матрица спектров для анализа
+
 	
 
 	//Методы
+	void LoadY(const std::string &YFileName, std::vector<std::vector<double> > &Y0);//Загрузка аттестованных концентраций из файла в двумерный вектор
+	void LoadNames(std::vector<std::string> &Names, const std::string &NamesFileName = "Names.txt");//Загрузка массива имен стандартных образцов для правильного соотнесения имя/концентрация
+
 	int LoadMatrixLong(const std::string &FileName, MatrixXd &X);//Функция заполнения двумерного массива данными из файла типа long (спектральными интенсивностями)
 	int LoadMatrixDouble(const std::string &FileName);
 	int LoadVectorLong(const std::string &FileName, VectorXd &X);//Функция инициализация вектора данными из файла
@@ -46,7 +50,7 @@ public:
 
 	std::string WorkingPath;//Путь к каталогу с файлами спектров для анализа
 	int Amax;//Максимальное количество Главных компонент
-	Matrix<double, Dynamic, Dynamic> Spectra;//Спектральная матрица для калибровки в формате Eigen 
+	Matrix<double, Dynamic, Dynamic> Spectra;//Спектральная матрица для калибровки (или для расчетов) в формате Eigen 
 	VectorXd LE;//Вектор начальных значений LE, инициализированных из файла
 	StructPLS LEcoeff;//Искомые параметры разложения матрицы нормирования
 	StructPLS XNormcoeff;//Искомые параметры разложения нормированной матрицы спектров
@@ -64,7 +68,10 @@ public:
 	Calibr(const std::string &InitFileName);//Полный путь к файлу инициализации
 	~Calibr();
 
-	void LoadInitDataForCalibrat(const std::string &SpectraFileName = "Spectra.dat", const std::string &YFileName="Y.txt");
+	void LoadInitDataForCalibrat(const std::string &SpectraFileName = "Spectra.dat", 
+		const std::string &YFileName="Y.txt", 
+		const std::string &NamesFile="Names.txt");
+
 	void InitLE_SetSumX();//В качестве параметра инициализации устанавливает все значения вектора LE сумма в каналах
 	void InitLE_SetMeanX();//В качестве параметра для инициализации устанавливается среднее значение в спектре
 	void InitLE_SetMaxX();//В качестве параметра для инициализации устанавливается среднее значение в спектре
@@ -82,13 +89,13 @@ public:
 	
 	void  ScorePredictPLS(const VectorXd &B, const MatrixXd &T, double Ymean, VectorXd &Y);//PLS прогноз через счета и коэффициенты регрессии. Y-результаты прогноза
 	void PredictPLS(const MatrixXd &X, const StructPLS &Coeff, VectorXd &Ycalc);//Простой расчет откликов Ycalc для неизвестного спектра X по PLS параметрам Coeff
-	VectorXd SpectraPredictPLS(const MatrixXd &X, const StructPLS LEcoeff, const StructPLS NormXcoeff);//Предсказание концентрации неизвестн. спектра через коэфф. PLS до и после нормирования
+	VectorXd SpectraPredictPLS(const MatrixXd &X, const StructPLS &LEcoeff, const StructPLS &NormXcoeff);//Предсказание концентрации неизвестн. спектра через коэфф. PLS до и после нормирования
 	double RMSE(VectorXd const &Y0, VectorXd const &Ycalc);// Расчет параметра градуировки. Минимум RMSE - показатель сходимости
 	
 	
 	void SaveResultsPLS();//Сохранение результатов расчет методом PLS
 	ProcessError LoadResultsPLS(const std::string FileName);//Чтение параметров PLS из файла в объект класса
-	void LoadElvaXSpectra(const std::string &Path, MatrixXd &X);//Загрузка всех спектров каталога в матрицу X
+	std::vector<std::string> LoadElvaXSpectra(const std::string &Path, MatrixXd &X);//Загрузка всех спектров каталога в матрицу X
 	void LoadElvaXSpectrum(const std::string FullFileName, RowVectorXd &X);//Загрузка спектральных интенсивностей из файла ElvaX в вектор-строку
 
 
