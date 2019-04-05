@@ -168,7 +168,6 @@ VectorXd B			A * 8 байт	вектор регрессионных коэффициентов B
 	res=res && SaveObject(X.W);
 	res=res && SaveObject(X.E);
 	res=res && SaveObject(X.F);
-	res=res && SaveObject(X.B);
 	return res;
 }
 
@@ -278,8 +277,6 @@ VectorXd B			A * 8 байт	вектор регрессионных коэффициентов B
 	res = res && LoadObject(X.E, X.N, X.M);//Читаем матрицу ошибок E
 	res = res && LoadObject(Temp, X.N,1);//Читаем вектор остатков Y во временную матрицу
 	X.F = Temp;
-	res = res && LoadObject(Temp, X.A, 1);//Читаем вектор коэффициентов B во временную матрицу
-	X.B = Temp;
 	return res;
 }
 

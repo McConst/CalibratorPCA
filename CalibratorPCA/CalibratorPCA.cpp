@@ -53,6 +53,9 @@ int main(int argc, char* argv[])
 	if (Calc.CalcParametersFile != "")
 	{
 		Calc.LoadResultsPLS(Calc.CalcParametersFile);//Подгружаем файл с промежуточными параметрами калибровки
+		//Calc.MatrixToClipboard(Calc.LEcoeff.T);//Копируем матрицу счетов в буфер обмена для анализа в Excel
+		//Calc.VectorToClipboard(Calc.LEcoeff.B);//Копируем вектор коэфф. в буфер
+
 	}
 	else
 	//Так как файл с промежуточными расчетами отсутствует, выполняем расчет начальных счетов и коэффициентов для LE
@@ -70,7 +73,7 @@ int main(int argc, char* argv[])
 		if (!Calc.FinalPLS)
 			//Расчеты ещё не выполнены
 		{
-			Calc.MainCalibrationPLS(0);
+			Calc.MainCalibrationPLS(1);
 		}
 		else
 		{

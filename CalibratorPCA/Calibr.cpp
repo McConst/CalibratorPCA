@@ -334,16 +334,13 @@ void Calibr::DecomposePLS(const MatrixXd &X0, const VectorXd &Y0, StructPLS &Res
 		Y = Result.F;
 		X = Result.E;
 	}
-	//Вычисляем коэффициенты регрессии
-	MatrixXd Tt = Result.T.transpose();
-	Result.B = (Tt*Result.T).inverse()*Tt*Y1;
 	return;
 }
 
-inline void  Calibr::ScorePredictPLS(const VectorXd &B, const MatrixXd &T, double Ymean, VectorXd &Y)
+inline void  Calibr::ScorePredictPLS(const VectorXd &Q, const MatrixXd &T, double Ymean, VectorXd &Y)
 //Функция расчета прогнозного значения Y через счета T и коэффициенты регрессии B
 {
-	Y = (T * B).array() + Ymean;//Расчет прогнозных значений
+	Y = (T * Q).array() + Ymean;//Расчет прогнозных значений
 }
 
 
@@ -359,17 +356,17 @@ void Calibr::MatrixToClipboard(MatrixXd X)
 		{
 			if (Cols - j > 1)
 			{
-				str.append(std::to_string(int(X(i, j)))).append("\t");
+				str.append(std::to_string(X(i, j))).append("\t");
 			}
 			else
 			{
 				if (Rows - i > 1)
 				{
-					str.append(std::to_string(int(X(i, j)))).append("\r\n");
+					str.append(std::to_string(X(i, j))).append("\r\n");
 				}
 				else
 				{
-					str.append(std::to_string(int(X(i, j))));
+					str.append(std::to_string(X(i, j)));
 				}
 			}
 		}
@@ -389,17 +386,17 @@ void Calibr::VectorToClipboard(VectorXd X)
 		{
 			if (Cols - j > 1)
 			{
-				str.append(std::to_string(int(X(i, j)))).append("\t");
+				str.append(std::to_string(X(i, j))).append("\t");
 			}
 			else
 			{
 				if (Rows - i > 1)
 				{
-					str.append(std::to_string(int(X(i, j)))).append("\r\n");
+					str.append(std::to_string(X(i, j))).append("\r\n");
 				}
 				else
 				{
-					str.append(std::to_string(int(X(i, j))));
+					str.append(std::to_string(X(i, j)));
 				}
 			}
 		}
@@ -417,7 +414,7 @@ double Calibr::RMSE(const VectorXd &Y0, const VectorXd &Ycalc)
 }
 
 void Calibr::NormDecomposePLS
-(const VectorXd &B_LE, MatrixXd &T, double Ymean, const MatrixXd &X0, const VectorXd &Y0, StructPLS &sX)
+(const VectorXd &Q_LE, MatrixXd &T, double Ymean, const MatrixXd &X0, const VectorXd &Y0, StructPLS &sX)
 /*Метод разложения спектральной матрицы с учетом нормализации
 Входные параметры:
 B_LE - коэффициенты для нахождения LE
@@ -430,7 +427,7 @@ sX - структура с результатами нормализованного разложения
 */
 {
 	VectorXd LEp;// Вектор предсказанных значений
-	ScorePredictPLS(B_LE, T, Ymean, LEp);//Получаем предсказанные вектора нормирования
+	ScorePredictPLS(Q_LE, T, Ymean, LEp);//Получаем предсказанные вектора нормирования
 	//Получаем диагональную матрицу нормирования размерностью NxN
 	DiagonalMatrix<double, Dynamic> LEn(LEp.array().inverse().matrix());
 	MatrixXd Xn = LEn * X0;//Нормированная матрица спектров
@@ -446,13 +443,14 @@ void Calibr::MainCalibrationPLS(int elmnt)
 	VectorXd NewLE(N);//Вектор новых значений LE
 	StructPLS NewXCoeff;//Результаты нового разложения нормированных спектров
 	VectorXd NewConc;//Новые концентрации при выполнении численного диффиренцирования
-	VectorXd dB;//Приращение коэффициентов в итерации Левенб.-Маркв.
+	VectorXd dQ;//Приращение хим. нагрузок в итерации Левенб.-Маркв.
 	MatrixXd Jt;//Транспонированный якобиан
 	MatrixXd JtJ;//Квадратная матрица AxA (Гессиан). Одна матрица нужна для хранения и восстановления гессиана в цикле подбора величины лямбда
 	VectorXd F(N);//Вектор-функции невязки. В каждой строке разность между реальным и расчетным значением (минимизируется при решении)
 	double iteratErr;//Ошибка нахождения коэффициентов. Условие выхода из алгоритма Левенберга-Марквардта
 	StructPLS OldPLS;//Старые параметры разложения по PLS;
 	double F_errLimit;//абсолютная допустимая ошибка вычисления невязки функций
+	double PLS_errIterat;//Абсолютное изменение коэффициентов между итерациями PLS. Для выхода из последнего внешнего цикла итераций
 	double F_err;//Значение ошибки невязки функции
 
 
@@ -465,13 +463,13 @@ void Calibr::MainCalibrationPLS(int elmnt)
 	{
 		double lambda{ StartLambda };//Инициализируем лямбда для коррекции скорости решения регрессии методом Левенберга-Марквардта
 		int TotalIterat{ 0 };
-		iteratErr = LEcoeff.B.norm()*err_relatCompareResult;
+		iteratErr = LEcoeff.Q.norm()*err_relatCompareResult;
 		do
 		{
 			//Полное разложение для текущих значений коэффициентов нормирования. Коэфф. нормирования сохраняем в свойство класса XNormcoeff
-			NormDecomposePLS(LEcoeff.B, LEcoeff.T, LEcoeff.Ymean, Spectra, mY.col(elmnt), XNormcoeff);
+			NormDecomposePLS(LEcoeff.Q, LEcoeff.T, LEcoeff.Ymean, Spectra, mY.col(elmnt), XNormcoeff);
 			//По концентрационным счетам предсказываем расчетные концентрации в Сonc0
-			ScorePredictPLS(XNormcoeff.B, XNormcoeff.T, XNormcoeff.Ymean, Conc0);
+			ScorePredictPLS(XNormcoeff.Q, XNormcoeff.T, XNormcoeff.Ymean, Conc0);
 
 			omp_set_nested(1);//Разрешаем вложенный параллелизм
 #pragma omp parallel for ordered private(NewXCoeff, NewConc)
@@ -480,18 +478,18 @@ void Calibr::MainCalibrationPLS(int elmnt)
 			{
 #pragma omp ordered
 				{
-					VectorXd B_LE2 = LEcoeff.B;//Восстанавливаем B_LE2 для новой итерации цикла
-					double DiffStep = B_LE2(i)*err_relatDiffStep;//Абсолютный шаг численного дифференцирования для колонки якобиана
+					VectorXd Q_LE2 = LEcoeff.Q;//Восстанавливаем Q_LE2 для новой итерации цикла
+					double DiffStep = Q_LE2(i)*err_relatDiffStep;//Абсолютный шаг численного дифференцирования для колонки якобиана
 
 					//Здесь допущение, что минимальном изменении коэффициентов при счетах
 					//почти не влияет на сами счета
-					B_LE2(i) += DiffStep;//Меняем очередной коэффициент по которому проводится частное дифференцирование
+					Q_LE2(i) += DiffStep;//Меняем очередной коэффициент по которому проводится частное дифференцирование
 
 					//Выполняем полное нормированное разложение при новом коэффициенте B_LE2
-					NormDecomposePLS(B_LE2, LEcoeff.T, LEcoeff.Ymean, Spectra, mY.col(elmnt), NewXCoeff);
+					NormDecomposePLS(Q_LE2, LEcoeff.T, LEcoeff.Ymean, Spectra, mY.col(elmnt), NewXCoeff);
 
 					//Выполняем расчет новых прогнозных значений согласно новых счетов полученных в полном разложении
-					ScorePredictPLS(NewXCoeff.B, NewXCoeff.T, NewXCoeff.Ymean, NewConc);
+					ScorePredictPLS(NewXCoeff.Q, NewXCoeff.T, NewXCoeff.Ymean, NewConc);
 					VectorXd dYdX = (NewConc - Conc0) / DiffStep;//Численное дифференцирование. i-я колонка якобиана
 					Jac.col(i) = dYdX;
 				}
@@ -504,7 +502,7 @@ void Calibr::MainCalibrationPLS(int elmnt)
 			JtJ = Jac.transpose() * Jac;
 			int iteratCount = 0;
 			bool DoIterat;//Флаг продолжения итерации при большем лямбда, если при текущем расходится
-			VectorXd NewB; //Коэффициенты регрессии, которые будут действовать на выходе из цикла
+			VectorXd NewQ; //Значения вектора нагрузок, которые будут действовать на выходе из цикла
 			do
 				//Цикл подбора величины Лямбда для регулирования шага сходимости
 			{
@@ -518,9 +516,9 @@ void Calibr::MainCalibrationPLS(int elmnt)
 #pragma omp parallel 
 				{
 					//Во всех потоках инициализируем локальные переменные
-					VectorXd NewB_local;//Вектор коэффициентов, рассчитываемый параллельно в цикле for
+					VectorXd NewQ_local;//Вектор коэффициентов, рассчитываемый параллельно в цикле for
 					VectorXd NewConc_local;//Вектор расчетных концентраций
-					VectorXd db_local;//Вектор приращения коэффициентов в параллельном цикле for
+					VectorXd dQ_local;//Вектор приращения коэффициентов в параллельном цикле for
 					VectorXd F2(N);
 					double lambda_local;//Коэффициент лямбда в параллельном потоке
 
@@ -532,12 +530,12 @@ void Calibr::MainCalibrationPLS(int elmnt)
 						//Cоздаем диагональную матрицу  NxN со значениями Лямбда в диагонали
 						MatrixXd lambdI = MatrixXd::Zero(Amax, Amax);
 						lambdI.diagonal().array() = lambda_local;//Главной диагонали присвоили значение лямбда
-						db_local = (JtJ + lambdI).inverse()*Jt*F; //Вычисляем приращения для вектора коэффициентов
-						NewB_local = LEcoeff.B + db_local;//Корректируем коэффициенты B с учетом приращения
-						//Снова проводим нормированное PLS-разложение для проверки сходимости невязки к минимуму при новых коэфф. B
-						NormDecomposePLS(NewB_local, LEcoeff.T, LEcoeff.Ymean, Spectra, mY.col(elmnt), NewXCoeff);
+						dQ_local = (JtJ + lambdI).inverse()*Jt*F; //Вычисляем приращения для вектора коэффициентов
+						NewQ_local = LEcoeff.Q + dQ_local;//Корректируем вектор Q с учетом приращения
+						//Снова проводим нормированное PLS-разложение для проверки сходимости невязки к минимуму при новых Q
+						NormDecomposePLS(NewQ_local, LEcoeff.T, LEcoeff.Ymean, Spectra, mY.col(elmnt), NewXCoeff);
 						//Выполняем расчет новых прогнозных значений при новых коэффициентах
-						ScorePredictPLS(NewXCoeff.B, NewXCoeff.T, NewXCoeff.Ymean, NewConc_local);
+						ScorePredictPLS(NewXCoeff.Q, NewXCoeff.T, NewXCoeff.Ymean, NewConc_local);
 						F2 = mY.col(elmnt) - NewConc_local;//Считаем невязку при новых коэффициентах	
 					}
 
@@ -551,9 +549,9 @@ void Calibr::MainCalibrationPLS(int elmnt)
 							//Сохраняем лучшие данные
 							minF2 = F2;
 							NewConc = NewConc_local;
-							NewB = NewB_local;
+							NewQ = NewQ_local;
 							lambda = lambda_local;
-							dB = db_local;
+							dQ = dQ_local;
 						}
 					}
 				}
@@ -587,36 +585,42 @@ void Calibr::MainCalibrationPLS(int elmnt)
 				return;
 			}
 			//Присваиваем системе новые коэффициенты
-			LEcoeff.B = NewB;
+			LEcoeff.Q = NewQ;
 			++TotalIterat;
 			RMSEC = F.norm() / std::sqrt(N);
 			std::cout << "\r" << "Элемент " << elmnt + 1 << ", Перестроено PLS: " << TotalPLSRebuildIterat << ", Шаг: " << TotalIterat;
-			std::cout << ", ошибка dB в LevMaq: " << dB.norm() / std::sqrt(Amax) << ", RMSEC= " << F.norm() / std::sqrt(N) << "   ";
+			std::cout << ", ошибка dQ в LevMaq: " << dQ.norm() / std::sqrt(Amax) << ", RMSEC= " << F.norm() / std::sqrt(N) << "   ";
 
 			/*Условия выхода из цикла:
 			1. Превышено количество максимальных итераций
 			2. Ошибка по коэффициентам не превышает ошибку вычислений
 			3. Изменение невязки функций не превышает ошибку вычислений
 			*/
-		} while ((TotalIterat < MaxIterationsLevMaq) && (dB.norm() / std::sqrt(Amax) > iteratErr) && (F_err > F_errLimit));
+		} while ((TotalIterat < MaxIterationsLevMaq) && (dQ.norm() / std::sqrt(Amax) > iteratErr) && (F_err > F_errLimit));
 
 		//Перерасчитываем параметры PLS для поиска LE
 		++TotalPLSRebuildIterat;
-		ScorePredictPLS(LEcoeff.B, LEcoeff.T, LEcoeff.Ymean, LE);//Получили новые значения LE для переразложения
+		ScorePredictPLS(LEcoeff.Q, LEcoeff.T, LEcoeff.Ymean, LE);//Получили новые значения LE для переразложения
 		//Сохраняем предыдущие значения коэффициентов, чтобы выйти из цикла когда итерации сойдутся
 		OldPLS = LEcoeff;
 		DecomposePLS(Spectra, LE, LEcoeff);//Выполнили переразложение
-		std::cout << std::endl << "Ошибка коэффициентов B_LE между итерациями: " << (OldPLS.B - LEcoeff.B).norm() / std::sqrt(Amax) << std::endl;
+		PLS_errIterat = (OldPLS.Q - LEcoeff.Q).norm() / std::sqrt(Amax);//Изменение коэффициентов между итерациями PLS разложения
+		std::cout << std::endl << "Изменение вектора Q_LE между итерациями: " << PLS_errIterat << std::endl;
 		if (TotalPLSRebuildIterat % 10 == 0)
 			//Каждые 10 шагов итерации сохраняемся в файл 
 		{
 			FinalPLS = 0;//Выход из цикла не выполнен, продолжаем расчет
 			SaveResultsPLS();
-			cout << "Расчетные концентрации:\n" << NewConc.block<25, 1>(0, 0) << "\n\n";
+			cout << "Расчетные концентрации первых 25 спектров:\n" << NewConc.block<25, 1>(0, 0) << "\n\n";
 		}
-	} while ((TotalPLSRebuildIterat < MaxPLSRebuildIterat) && ((OldPLS.B - LEcoeff.B).norm() / std::sqrt(Amax) > iteratErr));
+	/*Условия выхода из цикла
+	1. Итераций выполнено больше чем задано в ограничениях
+	2. Ошибка между регрессионными коэффициентами в итерациях PLS меньше заданной ошибки
+	*/
+	} while ((TotalPLSRebuildIterat < MaxPLSRebuildIterat) &&
+		PLS_errIterat>LEcoeff.Q.norm()*err_relatPLSiterat);
 
-	std::cout << std::endl << std::endl << "Коэффициенты LE для " << elmnt + 1 << "-го элемента:" << std::endl << LEcoeff.B << std::endl << std::endl;
+	std::cout << std::endl << std::endl << "Вектор Q_LE для " << elmnt + 1 << "-го элемента:" << std::endl << LEcoeff.Q << std::endl << std::endl;
 	std::cout << "RMSEC= " << RMSEC << std::endl << std::endl;
 	FinalPLS = 1;//Расчеты выполнены, сохраняем результаты вычислений в файл с признаком окончания расчетов
 	SaveResultsPLS();//Сохраняем информацию о параметрах разложения LE
@@ -800,5 +804,5 @@ void Calibr::PredictPLS(const MatrixXd &X0, const StructPLS &Coeff, VectorXd &Yc
 		X = X - T.col(i)*Coeff.P.col(i).transpose();//Получаем новую матрицу X
 	}
 
-	Ycalc = (T * Coeff.B).array() + Coeff.Ymean;//Получаем предсказание вектора отклика для матрицы X0 по PLS
+	Ycalc = (T * Coeff.Q).array() + Coeff.Ymean;//Получаем предсказание вектора отклика для матрицы X0 по PLS
 }
